@@ -1,0 +1,11 @@
+# 개인 IDE 설정 파일
+.idea
+.vscode
+
+# 환경 변수 파일
+.env
+.env.*.local
+
+# 빌드 출력물
+/package-lock.json
+/node_modules/
