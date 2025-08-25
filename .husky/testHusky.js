@@ -1,34 +1,53 @@
-// 예제: lint-staged 및 husky 테스트용 TypeScript 코드
+// 사용자 정보를 관리하는 예제 코드
+const users = [
+  { name: 'Alice', age: 25, email: 'alice@example.com' },
+  { name: 'Bob', age: 30, email: 'bob@example.com' },
+  { name: 'Charlie', age: 28, email: 'charlie@example.com' },
+];
 
-const   numbers:number[]=[1,2,  3,4,5,6,7,8,9,10] ;
-
-function sum( nums: number[] ):{total:number, average:number } {
-  let total=  0;
-  for(let i =0 ;i<nums.length ; i++){
-    total += nums[i]
-  }
-  const average= total /nums.length
-  return { total ,  average }
+function getUserByEmail(email) {
+  return users.find(user => user.email === email);
 }
 
-
-const result = sum( numbers )
-
-console. log( "총합: " ,result.total,  "평균:", result.average )
-
-
-class  Person {
-  name:string;
-  age:number;
-  constructor(name:string,age:number){ this.name=name; this.age=age}
-
-  greet(){
-    console.log(`안녕하세요, 제 이름은 ${this.name}이고, 나이는 ${this.age}살입니다.`)
+function addUser(name, age, email) {
+  if (!name || !age || !email) {
+    console.log('⚠️  유효하지 않은 사용자 정보입니다!');
+    return;
   }
+  users.push({ name, age, email });
+  console.log(`✅ 사용자 추가 완료: ${name}`);
 }
 
+function removeUser(email) {
+  const index = users.findIndex(user => user.email === email);
+  if (index === -1) {
+    console.log(`⚠️ ${email} 사용자를 찾을 수 없습니다.`);
+    return;
+  }
+  users.splice(index, 1);
+  console.log(`🗑️ 사용자 삭제 완료: ${email}`);
+}
 
-const user  = new   Person( "철수", 25 )
-user. greet () ;
+function printAllUsers() {
+  console.log('\n📌 현재 사용자 목록:');
+  users.forEach((user, idx) => {
+    console.log(`${idx + 1}. ${user.name} (${user.age}세) - ${user.email}`);
+  });
+  console.log('총 사용자 수:', users.length);
+}
 
-export{ sum , Person } ;
+// 테스트 코드 실행
+printAllUsers();
+console.log('\n=== 사용자 추가 테스트 ===');
+addUser('David', 29, 'david@example.com');
+addUser('Eve', 27, 'eve@example.com');
+
+console.log('\n=== 특정 사용자 조회 ===');
+const found = getUserByEmail('alice@example.com');
+console.log('검색 결과:', found);
+
+console.log('\n=== 사용자 삭제 ===');
+removeUser('bob@example.com');
+
+console.log('\n=== 최종 사용자 목록 ===');
+printAllUsers();
