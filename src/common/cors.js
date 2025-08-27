@@ -1,8 +1,9 @@
 import cors from 'cors';
+import 'dotenv/config';
 
 const corsOptions = {
   origin: [
-    'http://localhost:3000', // 개발 서버 도메인
+    process.env.DEV_FE_SERVER, // 개발 서버 도메인
     '', // 배포한 프론트엔드 도메인 입력
   ],
 
