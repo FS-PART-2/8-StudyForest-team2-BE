@@ -1,19 +1,116 @@
-// // prisma/schema.prisma (추가)
-// model User {
-//   id        Int      @id @default(autoincrement())
-//   email     String   @unique
-//   password  String
-//   name      String
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-//
-//   @@map("users")
-// }
-//
-// model BlacklistedToken {
-//   id        Int      @id @default(autoincrement())
-//   token     String   @unique
-//   createdAt DateTime @default(now())
-//
-//   @@map("blacklisted_tokens")
-// }
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model User {
+    id        Int      @id @default(autoincrement())
+    username  String   @unique
+    password  String
+    email     String   @unique
+    nick      String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model Study {
+    id        Int      @id @default(autoincrement())
+    nick      String?
+    name      String
+    content   String?
+    img       String?
+    password  String?
+    isActive  Boolean  @default(false) //활성화, 비활성화 구분
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    habitHistories HabitHistory[]
+    focuses        Focus[]
+    points         Point[]
+    studyEmojis    StudyEmoji[]
+}
+
+model HabitHistory {
+    id        Int      @id @default(autoincrement())
+    monDone   Boolean  @default(false) //월요일 습관 완료 여부 
+    tueDone   Boolean  @default(false)
+    wedDone   Boolean  @default(false)
+    thuDone   Boolean  @default(false)
+    friDone   Boolean  @default(false)
+    satDone   Boolean  @default(false)
+    sunDone   Boolean  @default(false)
+    weekDate  DateTime @db.Date //일주일 계산을 위한 필드 (@db.Date):날짜만 계산
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    studyId Int
+    study   Study @relation(fields: [studyId], references: [id], onDelete: Cascade)
+
+    habits Habit[]
+
+    @@unique([studyId, weekDate]) //스터디별 주간 기록 중복 방지
+    @@index([weekDate]) // 조회 성능 최적화
+}
+
+model Habit {
+    id        Int      @id @default(autoincrement())
+    habit     String // 습관 ex) 물 1리터 마시기
+    isDone    Boolean  @default(false) // 습관 완료 여부
+    date      DateTime // 오늘 날짜
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    habitHistoryId Int
+    habitHistory   HabitHistory @relation(fields: [habitHistoryId], references: [id], onDelete: Cascade)
+
+    @@unique([habitHistoryId, date, habit]) // 중복방지 데이터 무결성 보장
+}
+
+model Focus {
+    id        Int      @id @default(autoincrement())
+    setTime   DateTime
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    studyId Int
+    study   Study @relation(fields: [studyId], references: [id], onDelete: Cascade)
+}
+
+model Point {
+    id        Int      @id @default(autoincrement())
+    point     Int      @default(0) // 적립 포인트
+    value     Int      @default(0) // 포인트 개수
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    studyId Int
+    study   Study @relation(fields: [studyId], references: [id], onDelete: Cascade)
+}
+
+model Emoji {
+    id        Int      @id @default(autoincrement())
+    symbol    String   @unique //실제 이모지
+    name      String // 이모지 이름
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    studyEmojis StudyEmoji[]
+}
+
+model StudyEmoji {
+    id        Int      @id @default(autoincrement())
+    count     Int      @default(0) // 스터디별 이모지 개수
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    studyId Int
+    emojiId Int
+    study   Study @relation(fields: [studyId], references: [id], onDelete: Cascade)
+    emoji   Emoji @relation(fields: [emojiId], references: [id], onDelete: Cascade)
+
+    @@unique([studyId, emojiId])
+}
