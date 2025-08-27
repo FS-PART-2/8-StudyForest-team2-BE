@@ -121,3 +121,6 @@
 npm install
 npm run dev
 \`\`\`
+
+### Web hook 설정
+github - 디스코드 설정
