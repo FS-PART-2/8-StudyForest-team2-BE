@@ -13,7 +13,7 @@ function asyncHandler(handler) {
   return asyncReqHandler;
 }
 
-function errorHandler(err, req, res, next) {
+function errorHandler(err, req, res) {
   // 이곳에서 공통 에러를 처리해주세요
   // Prisma Client 에러 처리
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
@@ -115,7 +115,7 @@ function errorHandler(err, req, res, next) {
   else if (err.name === 'MulterError') {
     err.status = 400;
     err.code = 'UPLOAD_ERROR';
-    err.message = err.message;
+    err.message = 'File upload error';
   }
 
   // 응답 전송
