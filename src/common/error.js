@@ -13,7 +13,7 @@ function asyncHandler(handler) {
   return asyncReqHandler;
 }
 
-function errorHandler(err, req, res) {
+function errorHandler(err, req, res, next) {
   // 이곳에서 공통 에러를 처리해주세요
   // Prisma Client 에러 처리
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
