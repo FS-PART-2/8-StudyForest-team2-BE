@@ -7,7 +7,10 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "prepare": "husky"
+    "prepare": "husky",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate:dev": "prisma migrate dev",
+    "db:seed": "prisma db seed"
   },
   "lint-staged": {
     "**/*.ts": [
@@ -31,6 +34,16 @@
     "eslint-plugin-react-hooks": "^4.3.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.5",
-    "prettier": "^3.6.2"
+    "prettier": "^3.6.2",
+    "prisma": "^6.15.0",
+    "nodemon": "^3.1.7"
+  },
+  "dependencies": {
+    "@faker-js/faker": "^10.0.0",
+    "@prisma/client": "^6.15.0"
+  },
+  "prisma": {
+    "schema": "src/prisma/schema.prisma",
+    "seed": "node src/prisma/seed.js"
   }
 }
