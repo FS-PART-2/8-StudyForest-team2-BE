@@ -2,7 +2,7 @@
 import studyService from '../services/Study.Services.js';
 
 // 스터디 목록 조회 API
-async function controllStudyList(req, res) {
+async function controlStudyList(req, res) {
   /* 쿼리 파라미터 파싱 */
   const offset = parseInt(req.query.offset, 10) || 0;
   const keyword = req.query.keyword || '';
@@ -28,4 +28,4 @@ async function controllStudyList(req, res) {
   res.json(studyList);
 }
 
-export default { controllStudyList };
+export default { controlStudyList };

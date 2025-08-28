@@ -1,7 +1,6 @@
 // Description: API를 위한 라우터 설정 코드 파일입니다.
 // 라이브러리 정의
 import express from 'express';
-import { Prisma } from '@prisma/client';
 
 // 미들웨어 정의
 import corsMiddleware from '../../../src/common/cors.js';
@@ -16,10 +15,7 @@ router.use(corsMiddleware); // CORS 미들웨어 적용
 router.use(express.json());
 
 // 스터디 목록 조회 API 엔드포인트
-router.get(
-  '/',
-  errorMiddleware.asyncHandler(studyController.controllStudyList),
-);
+router.get('/', errorMiddleware.asyncHandler(studyController.controlStudyList));
 
 // // 예시 API 엔드포인트
 // router.get(
