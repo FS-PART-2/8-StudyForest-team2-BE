@@ -92,7 +92,12 @@ function errorHandler(err, req, res, next) {
     err.code = 'PRISMA_RUST_PANIC';
     err.message = 'Database engine panic';
   }
-
+  // Superstruct 에러 처리
+  else if (err.name === 'StructError') {
+    err.status = 400;
+    err.code = 'INVALID_INPUT';
+    err.message = 'Invalid input data';
+  }
   // JWT 에러 처리
   else if (err.name === 'JsonWebTokenError') {
     err.status = 401;

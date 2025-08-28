@@ -2,6 +2,7 @@
 import { assert } from 'superstruct';
 import { createStudy } from '../structs.js';
 import studyService from '../services/study.services.js';
+import argon2 from 'argon2';
 
 // 스터디 목록 조회 API
 async function controlStudyList(req, res) {
@@ -47,20 +48,19 @@ async function controlStudyCreate(req, res) {
       .json({ error: '비밀번호와 확인용 비밀번호가 일치하지 않습니다.' });
     return;
   }
-
+  const passwordHash = await argon2.hash(password);
   /* 서비스 호출 */
-
   const studyCreate = await studyService.serviceStudyCreate(
     nick,
     name,
     content,
     img,
-    password,
+    passwordHash,
     isActive,
   );
 
   /* 결과 반환 */
-  res.status(200).json(studyCreate);
+  res.status(201).location(`/study/${studyCreate.id}`).json(studyCreate);
 }
 
 export default { controlStudyList, controlStudyCreate };

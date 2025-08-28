@@ -66,12 +66,22 @@ async function serviceStudyCreate(
   name,
   content,
   img,
-  password,
+  passwordHash,
   isActive,
 ) {
   try {
     const studyCreate = await prisma.study.create({
-      data: { nick, name, content, img, password, isActive },
+      data: { nick, name, content, img, password: passwordHash, isActive },
+      select: {
+        id: true,
+        nick: true,
+        name: true,
+        content: true,
+        img: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
 
     return studyCreate;
