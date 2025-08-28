@@ -5,19 +5,23 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function serviceStudyList(options) {
-  const { offset, keyword, pointOrder, recentOrder } = options;
-  const PAGE_SIZE = 6; // 한 번에 가져올 스터디 수
-  const where = { isActive: true };
-
-  try {
-    const [studies, totalCount] = await Promise.all([
-      prisma.study.findMany({
-        where: {
+  const { offset, limit, keyword, pointOrder, recentOrder } = options;
+  const where = {
+    isActive: true,
+    ...(keyword
+      ? {
           name: {
             contains: keyword,
             mode: 'insensitive',
           },
-        },
+        }
+      : {}),
+  };
+
+  try {
+    const [studies, totalCount] = await Promise.all([
+      prisma.study.findMany({
+        where,
         orderBy: [
           {
             points: {
@@ -27,7 +31,7 @@ async function serviceStudyList(options) {
           { createdAt: recentOrder === 'recent' ? 'desc' : 'asc' },
         ],
         skip: offset,
-        take: PAGE_SIZE,
+        take: Math.min(limit, 50),
         select: {
           id: true,
           nick: true,
