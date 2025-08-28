@@ -25,7 +25,7 @@ async function controlStudyList(req, res) {
   const pointOrder = pointOrderRaw === 'desc' ? 'desc' : 'asc';
   const recentOrder = recentOrderRaw === 'old' ? 'old' : 'recent';
 
-  // 서비스 호출
+  /* 서비스 호출 */
   const studyList = await studyService.serviceStudyList({
     offset,
     limit,
@@ -34,11 +34,12 @@ async function controlStudyList(req, res) {
     recentOrder,
   });
 
+  /* 결과 반환 */
   res.json(studyList);
 }
 
 async function controlStudyCreate(req, res) {
-  /* 입력 검증 */
+  /* 쿼리 파라미터 파싱 및 입력 검증 */
   assert(req.body, createStudy);
   const { nick, name, content, img, password, checkPassword, isActive } =
     req.body;
@@ -49,6 +50,7 @@ async function controlStudyCreate(req, res) {
     throw err;
   }
   const passwordHash = await argon2.hash(password);
+
   /* 서비스 호출 */
   const studyCreate = await studyService.serviceStudyCreate(
     nick,
@@ -63,4 +65,24 @@ async function controlStudyCreate(req, res) {
   res.status(201).location(`/study/${studyCreate.id}`).json(studyCreate);
 }
 
-export default { controlStudyList, controlStudyCreate };
+async function controlStudyDelete(req, res) {
+  /* 쿼리 파라미터 파싱 및 입력 검증 */
+  const studyId = Number.parseInt(req.params.studyId, 10);
+  if (!Number.isFinite(studyId) || studyId <= 0) {
+    const err = new Error('유효하지 않은 스터디 ID입니다.');
+    err.status = 400;
+    err.code = 'INVALID_STUDY_ID';
+    throw err;
+  }
+
+  /* 서비스 호출 */
+  const studyDelete = await studyService.serviceStudyDelete(
+    studyId,
+    req.query.password,
+  );
+
+  /* 결과 반환 */
+  res.status(201).json(studyDelete);
+}
+
+export default { controlStudyList, controlStudyCreate, controlStudyDelete };
