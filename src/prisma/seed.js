@@ -12,16 +12,27 @@ const pickTwoDistinct = arr => {
   return [a, b];
 };
 
-const HABITS = [
-  '물 1리터 마시기',
-  '운동 30분 하기',
-  '기상 후 스트레칭',
-  '영어 단어 30개 외우기',
-  '독서 20분',
+//  한국인 이름 샘플
+const KOREAN_NAMES = [
+  '김민준',
+  '이서준',
+  '박도윤',
+  '최하준',
+  '정서윤',
+  '한지우',
+  '조하은',
+  '장지호',
+  '윤예은',
+  '서지민',
+  '강현우',
+  '임민서',
+  '오유진',
+  '신수아',
+  '권주원',
 ];
 
-// 공부 관련 스터디 주제
-const STUDY_TOPICS = [
+//  스터디 주제
+const STUDY_SUBJECTS = [
   '알고리즘 문제 풀이',
   '영어 단어 암기',
   '수학 문제 풀이',
@@ -30,16 +41,14 @@ const STUDY_TOPICS = [
   '자료구조 복습',
   '논문 리뷰 모임',
   '독서 토론',
-  '프로젝트 협업',
-  '프로그래밍 언어 학습',
-  '웹 개발 스터디',
+  '웹 개발',
   '데이터베이스 심화',
-  '네트워크 이론 학습',
+  '네트워크 이론',
   '운영체제 공부',
   'AI/머신러닝 기초',
 ];
 
-// 공부 분위기 설명 문장
+//  스터디 분위기 설명
 const STUDY_CONTENTS = [
   '매일 문제 풀이를 공유하고 피드백합니다.',
   '꾸준한 학습 습관을 만들고자 합니다.',
@@ -53,17 +62,26 @@ const STUDY_CONTENTS = [
   '기록과 인증으로 꾸준함을 유지합니다.',
 ];
 
+//  습관
+const HABITS = [
+  '물 1리터 마시기',
+  '운동 30분 하기',
+  '기상 후 스트레칭',
+  '영어 단어 30개 외우기',
+  '독서 20분',
+];
+
 async function seedUsers(n = 5) {
-  const now = Date.now();
   await prisma.user.createMany({
-    data: Array.from({ length: n }).map((_, i) => {
-      const uname = `${faker.internet.username()}_${now}_${i}`;
-      const email = `${uname}@example.com`;
+    data: Array.from({ length: n }).map(() => {
+      const name = faker.helpers.arrayElement(KOREAN_NAMES);
       return {
-        username: uname,
-        password: faker.internet.password(),
-        email,
-        nick: faker.person.firstName(),
+        username: name,
+        password: faker.internet.password({
+          length: faker.number.int({ min: 8, max: 16 }),
+        }),
+        email: faker.internet.email({ firstName: name }),
+        nick: name,
       };
     }),
   });
@@ -71,18 +89,22 @@ async function seedUsers(n = 5) {
 
 async function seedStudies(n = 2) {
   return Promise.all(
-    Array.from({ length: n }).map(() =>
-      prisma.study.create({
+    Array.from({ length: n }).map(() => {
+      const leader = faker.helpers.arrayElement(KOREAN_NAMES);
+      const subject = faker.helpers.arrayElement(STUDY_SUBJECTS);
+      return prisma.study.create({
         data: {
-          nick: faker.word.noun(),
-          name: faker.helpers.arrayElement(STUDY_TOPICS), // 공부 관련 주제
-          content: faker.helpers.arrayElement(STUDY_CONTENTS), // 공부 분위기 설명
+          nick: leader,
+          name: `${leader}의 ${subject} 스터디`, // 이름 + 주제
+          content: faker.helpers.arrayElement(STUDY_CONTENTS),
           img: '/img/default.png',
-          password: faker.internet.password(),
+          password: faker.internet.password({
+            length: faker.number.int({ min: 8, max: 16 }),
+          }),
           isActive: randBool(),
         },
-      }),
-    ),
+      });
+    }),
   );
 }
 
