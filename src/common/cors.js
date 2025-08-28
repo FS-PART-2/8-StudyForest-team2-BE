@@ -1,9 +1,9 @@
 import cors from 'cors';
-import 'dotenv/config';
+import dotenv from 'dotenv';
 
 const envFile =
   process.env.NODE_ENV === 'production' ? '.env.production' : '.env';
-process.env.config(`../${envFile}`);
+dotenv.config({ path: envFile });
 
 const corsOptions = {
   origin: [process.env.FE_DOMAIN || 'http://localhost:3000'], // 허용할 도메인
