@@ -32,5 +32,13 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.1.5",
     "prettier": "^3.6.2"
+  },
+  "dependencies": {
+    "@faker-js/faker": "^10.0.0",
+    "@prisma/client": "^6.15.0"
+  },
+  "prisma": {
+    "schema": "src/prisma/schema.prisma",
+    "seed": "node src/prisma/seed.js"
   }
 }
