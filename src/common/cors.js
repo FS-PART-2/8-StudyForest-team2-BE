@@ -1,14 +1,14 @@
 import cors from 'cors';
-import 'dotenv/config';
+import dotenv from 'dotenv';
+
+const envFile =
+  process.env.NODE_ENV === 'production' ? '.env.production' : '.env';
+dotenv.config({ path: envFile });
 
 const corsOptions = {
-  origin: [
-    process.env.DEV_FE_SERVER, // 개발 서버 도메인
-    '', // 배포한 프론트엔드 도메인 입력
-  ],
-
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-  allowHeaders: ['Content-Type', 'Authorization'],
+  origin: [process.env.FE_DOMAIN || 'http://localhost:3000'], // 허용할 도메인
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'], // 허용할 HTTP 메서드
+  allowedHeaders: ['Content-Type', 'Authorization'], // 허용할 헤더
   credentials: true, // 쿠키 인증을 사용함
   optionsSuccessStatus: 200, // 일부 브라우저 호환용
 };
