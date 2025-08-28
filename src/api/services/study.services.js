@@ -43,6 +43,7 @@ async function serviceStudyList(options) {
           updatedAt: true,
           _count: {
             select: {
+              points: true,
               habitHistories: true,
               focuses: true,
               studyEmojis: true,
