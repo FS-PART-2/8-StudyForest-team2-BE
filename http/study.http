@@ -1,1 +1,5 @@
 # 스터디 관련 API를 테스트하는 HTTP 요청 파일입니다.
+
+###
+
+GET http://localhost:3000/study?offset=0&pointOrder=desc&recentOrder=recent
