@@ -72,18 +72,26 @@ const HABITS = [
 ];
 
 async function seedUsers(n = 5) {
-  await prisma.user.createMany({
-    data: Array.from({ length: n }).map(() => {
-      const name = faker.helpers.arrayElement(KOREAN_NAMES);
-      return {
-        username: name,
-        password: faker.internet.password({
-          length: faker.number.int({ min: 8, max: 16 }),
-        }),
-        email: faker.internet.email({ firstName: name }),
-        nick: name,
-      };
+  // 고유한 한국인 이름 n개 선택 (부족하면 중복 허용)
+  const baseNames =
+    KOREAN_NAMES.length >= n
+      ? faker.helpers.arrayElements(KOREAN_NAMES, n)
+      : Array.from({ length: n }).map(() =>
+          faker.helpers.arrayElement(KOREAN_NAMES),
+        );
+  const users = baseNames.map(name => ({
+    username: name,
+    // NOTE: 개발 시드이므로 평문. 운영 사용 시 해시 필수.
+    password: faker.internet.password({
+      length: faker.number.int({ min: 8, max: 16 }),
     }),
+    // ASCII 안전 + 재실행 시 충돌 완화
+    email: `${faker.string.alphanumeric({ length: 10, casing: 'lower' })}@example.com`,
+    nick: name,
+  }));
+  await prisma.user.createMany({
+    data: users,
+    skipDuplicates: true, // 유니크 충돌 시 무시
   });
 }
 
@@ -123,65 +131,67 @@ async function seedEmojisBase() {
 }
 
 async function seedPerStudy(study, emojis) {
-  const habitHistory = await prisma.habitHistory.create({
-    data: {
-      studyId: study.id,
-      weekDate: recentDate(7),
-      monDone: randBool(),
-      tueDone: randBool(),
-      wedDone: randBool(),
-      thuDone: randBool(),
-      friDone: randBool(),
-      satDone: randBool(),
-      sunDone: randBool(),
-    },
-  });
-
-  const [h1, h2] = pickTwoDistinct(HABITS);
-  const d1 = recentDate(3);
-  let d2 = recentDate(3);
-  if (d2.toDateString() === d1.toDateString()) {
-    d2 = new Date(d1.getTime() - 24 * 60 * 60 * 1000);
-  }
-
-  await prisma.habit.createMany({
-    data: [
-      {
-        habit: h1,
-        isDone: randBool(),
-        date: d1,
-        habitHistoryId: habitHistory.id,
+  await prisma.$transaction(async tx => {
+    const habitHistory = await tx.habitHistory.create({
+      data: {
+        studyId: study.id,
+        weekDate: recentDate(7),
+        monDone: randBool(),
+        tueDone: randBool(),
+        wedDone: randBool(),
+        thuDone: randBool(),
+        friDone: randBool(),
+        satDone: randBool(),
+        sunDone: randBool(),
       },
-      {
-        habit: h2,
-        isDone: randBool(),
-        date: d2,
-        habitHistoryId: habitHistory.id,
+    });
+
+    const [h1, h2] = pickTwoDistinct(HABITS);
+    const d1 = recentDate(3);
+    let d2 = recentDate(3);
+    if (d2.toDateString() === d1.toDateString()) {
+      d2 = new Date(d1.getTime() - 24 * 60 * 60 * 1000);
+    }
+
+    await tx.habit.createMany({
+      data: [
+        {
+          habit: h1,
+          isDone: randBool(),
+          date: d1,
+          habitHistoryId: habitHistory.id,
+        },
+        {
+          habit: h2,
+          isDone: randBool(),
+          date: d2,
+          habitHistoryId: habitHistory.id,
+        },
+      ],
+    });
+
+    await tx.focus.createMany({
+      data: [
+        { setTime: faker.date.soon({ days: 3 }), studyId: study.id },
+        { setTime: faker.date.soon({ days: 3 }), studyId: study.id },
+      ],
+    });
+
+    await tx.point.create({
+      data: {
+        point: faker.number.int({ min: 5, max: 50 }),
+        value: faker.number.int({ min: 1, max: 10 }),
+        studyId: study.id,
       },
-    ],
-  });
+    });
 
-  await prisma.focus.createMany({
-    data: [
-      { setTime: faker.date.soon({ days: 3 }), studyId: study.id },
-      { setTime: faker.date.soon({ days: 3 }), studyId: study.id },
-    ],
-  });
-
-  await prisma.point.create({
-    data: {
-      point: faker.number.int({ min: 5, max: 50 }),
-      value: faker.number.int({ min: 1, max: 10 }),
-      studyId: study.id,
-    },
-  });
-
-  await prisma.studyEmoji.create({
-    data: {
-      studyId: study.id,
-      emojiId: emojis[0].id,
-      count: faker.number.int({ min: 1, max: 20 }),
-    },
+    await tx.studyEmoji.create({
+      data: {
+        studyId: study.id,
+        emojiId: emojis[0].id,
+        count: faker.number.int({ min: 1, max: 20 }),
+      },
+    });
   });
 }
 
