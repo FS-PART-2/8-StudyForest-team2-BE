@@ -18,3 +18,7 @@ Content-Type: application/json
     "checkPassword": "1234",
     "isActive": true
 }
+
+###
+
+DELETE http://localhost:3000/study/16?password=1234
