@@ -61,4 +61,24 @@ async function serviceStudyList(options) {
   }
 }
 
-export default { serviceStudyList };
+async function serviceStudyCreate(
+  nick,
+  name,
+  content,
+  img,
+  password,
+  isActive,
+) {
+  try {
+    const studyCreate = await prisma.study.create({
+      data: { nick, name, content, img, password, isActive },
+    });
+
+    return studyCreate;
+  } catch (error) {
+    console.log(error, '가 발생했습니다.');
+    throw error;
+  }
+}
+
+export default { serviceStudyList, serviceStudyCreate };

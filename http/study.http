@@ -3,3 +3,18 @@
 ###
 
 GET http://localhost:3000/study?offset=0&pointOrder=desc&recentOrder=recent
+
+###
+
+POST http://localhost:3000/study
+Content-Type: application/json
+
+{
+    "nick": "테스트",
+    "name": "스터디 생성 테스트",
+    "content": "스터디 생성 테스트 중 입니다.",
+    "img": "https://avatars.githubusercontent.com/in/347564?s=60&v=4",
+    "password": "1234",
+    "checkPassword": "1234",
+    "isActive": true
+}

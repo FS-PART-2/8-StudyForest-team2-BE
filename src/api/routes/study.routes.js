@@ -14,8 +14,21 @@ const router = express.Router();
 router.use(corsMiddleware); // CORS 미들웨어 적용
 router.use(express.json());
 
+/* 스터디 */
 // 스터디 목록 조회 API 엔드포인트
 router.get('/', errorMiddleware.asyncHandler(studyController.controlStudyList));
+
+// 스터디 생성 API 엔드포인트
+router.post(
+  '/',
+  errorMiddleware.asyncHandler(studyController.controlStudyCreate),
+);
+
+/* 오늘의 습관 */
+
+/* 오늘의 집증 */
+
+/* 유저 기능 */
 
 // // 예시 API 엔드포인트
 // router.get(

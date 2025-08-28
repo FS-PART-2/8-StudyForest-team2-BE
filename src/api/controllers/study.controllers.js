@@ -1,4 +1,6 @@
 // 요청 파싱(params/query/body) + 입력 검증 결과 처리
+import { assert } from 'superstruct';
+import { createStudy } from '../structs.js';
 import studyService from '../services/study.services.js';
 
 // 스터디 목록 조회 API
@@ -34,4 +36,31 @@ async function controlStudyList(req, res) {
   res.json(studyList);
 }
 
-export default { controlStudyList };
+async function controlStudyCreate(req, res) {
+  /* 입력 검증 */
+  assert(req.body, createStudy);
+  const { nick, name, content, img, password, checkPassword, isActive } =
+    req.body;
+  if (password !== checkPassword) {
+    res
+      .status(400)
+      .json({ error: '비밀번호와 확인용 비밀번호가 일치하지 않습니다.' });
+    return;
+  }
+
+  /* 서비스 호출 */
+
+  const studyCreate = await studyService.serviceStudyCreate(
+    nick,
+    name,
+    content,
+    img,
+    password,
+    isActive,
+  );
+
+  /* 결과 반환 */
+  res.status(200).json(studyCreate);
+}
+
+export default { controlStudyList, controlStudyCreate };
