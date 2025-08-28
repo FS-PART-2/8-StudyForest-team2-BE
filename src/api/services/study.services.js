@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 
 async function serviceStudyList(options) {
   const { offset, keyword, pointOrder, recentOrder } = options;
-  const PAGE_SIZE = 20; // 한 번에 가져올 스터디 수
+  const PAGE_SIZE = 6; // 한 번에 가져올 스터디 수
   const where = { isActive: true };
 
   try {
