@@ -43,10 +43,10 @@ async function controlStudyCreate(req, res) {
   const { nick, name, content, img, password, checkPassword, isActive } =
     req.body;
   if (password !== checkPassword) {
-    res
-      .status(400)
-      .json({ error: '비밀번호와 확인용 비밀번호가 일치하지 않습니다.' });
-    return;
+    const err = new Error('비밀번호와 확인용 비밀번호가 일치하지 않습니다.');
+    err.status = 400;
+    err.code = 'PASSWORD_MISMATCH';
+    throw err;
   }
   const passwordHash = await argon2.hash(password);
   /* 서비스 호출 */
