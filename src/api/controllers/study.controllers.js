@@ -92,15 +92,8 @@ async function controlStudyDelete(req, res) {
 
 async function controlStudyDetail(req, res) {
   /* 쿼리 파라미터 파싱 및 입력 검증 */
-  const studyId = parseInt(req.params.studyId);
-  if (!studyId) {
-    const err = new Error('스터디 ID가 누락되었습니다.');
-    err.status = 400;
-    err.code = 'STUDY_ID_REQUIRED';
-    throw err;
-  }
-
-  if (Number.isNaN(studyId)) {
+  const studyId = Number.parseInt(req.params.studyId, 10);
+  if (!Number.isFinite(studyId) || studyId <= 0) {
     const err = new Error('유효하지 않은 스터디 ID입니다.');
     err.status = 400;
     err.code = 'INVALID_STUDY_ID';
