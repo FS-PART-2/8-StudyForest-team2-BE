@@ -3,7 +3,7 @@
 // 라이브러리 정의
 import express from 'express';
 // 미들웨어 정의
-import corsMiddleware from '../../common/cors';
+import corsMiddleware from '../../common/cors.js';
 
 // 컨트롤러 정의 (오늘의 습관 조회)
 import { asyncHandler, errorHandler } from '../../common/error.js'; // 에러 케이스 추가는 여기서 관리
