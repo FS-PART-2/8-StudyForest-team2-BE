@@ -1,5 +1,8 @@
+// seed.js
 import { PrismaClient } from '@prisma/client';
 import { faker } from '@faker-js/faker';
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 const prisma = new PrismaClient();
 
@@ -11,6 +14,8 @@ const pickTwoDistinct = arr => {
   if (a === b) b = faker.helpers.arrayElement(arr.filter(x => x !== a));
   return [a, b];
 };
+
+const SALT_ROUNDS = 12;
 
 //  한국인 이름 샘플
 const KOREAN_NAMES = [
@@ -71,6 +76,11 @@ const HABITS = [
   '독서 20분',
 ];
 
+// 안전한 랜덤 리프레시 토큰 생성(평문)
+function createRefreshTokenPlain(bytes = 48) {
+  return crypto.randomBytes(bytes).toString('hex'); // 96자 hex
+}
+
 async function seedUsers(n = 5) {
   // 고유한 한국인 이름 n개 선택 (부족하면 중복 허용)
   const baseNames =
@@ -79,19 +89,39 @@ async function seedUsers(n = 5) {
       : Array.from({ length: n }).map(() =>
           faker.helpers.arrayElement(KOREAN_NAMES),
         );
-  const users = baseNames.map(name => ({
-    username: name,
-    // NOTE: 개발 시드이므로 평문. 운영 사용 시 해시 필수.
-    password: faker.internet.password({
-      length: faker.number.int({ min: 8, max: 16 }),
+
+  // 사용자 배열(비번/리프레시토큰 해시 포함) 생성
+  const usersWithSecrets = await Promise.all(
+    baseNames.map(async name => {
+      const passwordPlain = faker.internet.password({
+        length: faker.number.int({ min: 8, max: 16 }),
+      });
+      const passwordHash = await bcrypt.hash(passwordPlain, SALT_ROUNDS);
+
+      // 리프레시 토큰(평문) & 해시
+      const refreshTokenPlain = createRefreshTokenPlain();
+      const refreshTokenHash = await bcrypt.hash(
+        refreshTokenPlain,
+        SALT_ROUNDS,
+      );
+
+      return {
+        data: {
+          username: name,
+          password: passwordHash, // ✅ 해시 저장
+          email: `${faker.string.alphanumeric({ length: 10, casing: 'lower' })}@example.com`,
+          nick: name,
+          refreshToken: refreshTokenHash, // ✅ 해시 저장
+        },
+        debug: { username: name, passwordPlain, refreshTokenPlain },
+      };
     }),
-    // ASCII 안전 + 재실행 시 충돌 완화
-    email: `${faker.string.alphanumeric({ length: 10, casing: 'lower' })}@example.com`,
-    nick: name,
-  }));
+  );
+
+  // createMany는 해시 완료된 결과만 사용
   await prisma.user.createMany({
-    data: users,
-    skipDuplicates: true, // 유니크 충돌 시 무시
+    data: usersWithSecrets.map(u => u.data),
+    skipDuplicates: true,
   });
 }
 
@@ -103,7 +133,7 @@ async function seedStudies(n = 2) {
       return prisma.study.create({
         data: {
           nick: leader,
-          name: `${leader}의 ${subject} 스터디`, // 이름 + 주제
+          name: `${leader}의 ${subject} 스터디`,
           content: faker.helpers.arrayElement(STUDY_CONTENTS),
           img: '/img/default.png',
           password: faker.internet.password({
