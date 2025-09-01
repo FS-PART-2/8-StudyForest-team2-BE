@@ -28,6 +28,12 @@ router.delete(
   errorMiddleware.asyncHandler(studyController.controlStudyDelete),
 );
 
+// 스터디 상세조회 API 엔드포인트
+router.get(
+  '/:studyId',
+  errorMiddleware.asyncHandler(studyController.controlStudyDetail),
+);
+
 // // 예시 API 엔드포인트
 // router.get(
 //   '/example-API',

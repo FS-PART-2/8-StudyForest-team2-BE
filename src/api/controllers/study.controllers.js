@@ -90,4 +90,39 @@ async function controlStudyDelete(req, res) {
   res.status(204).end();
 }
 
-export default { controlStudyList, controlStudyCreate, controlStudyDelete };
+async function controlStudyDetail(req, res) {
+  /* 쿼리 파라미터 파싱 및 입력 검증 */
+  const studyId = parseInt(req.params.studyId);
+  if (!studyId) {
+    const err = new Error('스터디 ID가 누락되었습니다.');
+    err.status = 400;
+    err.code = 'STUDY_ID_REQUIRED';
+    throw err;
+  }
+
+  if (Number.isNaN(studyId)) {
+    const err = new Error('유효하지 않은 스터디 ID입니다.');
+    err.status = 400;
+    err.code = 'INVALID_STUDY_ID';
+    throw err;
+  }
+
+  /* 서비스 호출 */
+  const studyDetail = await studyService.serviceStudyDetail(studyId);
+  if (!studyDetail) {
+    const err = new Error('존재하지 않는 스터디 ID입니다.');
+    err.status = 404;
+    err.code = 'STUDY_NOT_FOUND';
+    throw err;
+  }
+
+  /* 결과 반환 */
+  res.status(200).json(studyDetail);
+}
+
+export default {
+  controlStudyList,
+  controlStudyCreate,
+  controlStudyDelete,
+  controlStudyDetail
+};

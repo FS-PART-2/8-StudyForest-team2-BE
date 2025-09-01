@@ -71,7 +71,7 @@ async function serviceStudyCreate(
   isActive,
 ) {
   try {
-    const studyCreate = await prisma.study.create({
+    return await prisma.study.create({
       data: { nick, name, content, img, password: passwordHash, isActive },
       select: {
         id: true,
@@ -84,8 +84,6 @@ async function serviceStudyCreate(
         updatedAt: true,
       },
     });
-
-    return studyCreate;
   } catch (error) {
     console.log(error, '가 발생했습니다.');
     throw error;
@@ -129,4 +127,39 @@ async function serviceStudyDelete(studyId, password) {
   }
 }
 
-export default { serviceStudyList, serviceStudyCreate, serviceStudyDelete };
+async function serviceStudyDetail(studyId) {
+  try {
+    return await prisma.study.findUnique({
+      where: { id: studyId },
+      select: {
+        studyEmojis: true,
+        habitHistories: true,
+        id: true,
+        nick: true,
+        name: true,
+        content: true,
+        img: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        _count: {
+          select: {
+            points: true,
+            studyEmojis: true,
+            habitHistories: true,
+          },
+        },
+      },
+    });
+  } catch (error) {
+    console.log(error, '가 발생했습니다.');
+    throw error;
+  }
+}
+
+export default {
+  serviceStudyList,
+  serviceStudyCreate,
+  serviceStudyDelete,
+  serviceStudyDetail,
+};
