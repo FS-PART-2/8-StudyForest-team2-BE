@@ -90,6 +90,50 @@ async function serviceStudyCreate(
   }
 }
 
+async function serviceStudyUpdate(
+  studyId,
+  nick,
+  name,
+  content,
+  img,
+  password,
+  isActive,
+){
+  try{
+    // 비밀번호 일치 여부 확인
+    const study = await prisma.study.findUnique({
+      where: { id: studyId },
+      select: { password: true },
+    });
+    const isPasswordValid = await argon2.verify(study.password, password);
+    if (!isPasswordValid) {
+      const err = new Error('비밀번호가 일치하지 않습니다.');
+      err.status = 403;
+      err.code = 'INVALID_PASSWORD';
+      throw err;
+    }
+
+    // 스터디 정보 업데이트
+    return prisma.study.update({
+      where: { id: studyId },
+      data: { nick, name, content, img, isActive },
+      select: {
+        id: true,
+        nick: true,
+        name: true,
+        content: true,
+        img: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  } catch (error) {
+    console.log(error, '가 발생했습니다.');
+    throw error;
+  }
+}
+
 async function serviceStudyDelete(studyId, password) {
   try {
     const study = await prisma.study.findUnique({
@@ -176,6 +220,7 @@ async function serviceStudyDetail(studyId) {
 export default {
   serviceStudyList,
   serviceStudyCreate,
+  serviceStudyUpdate,
   serviceStudyDelete,
   serviceStudyDetail,
 };
