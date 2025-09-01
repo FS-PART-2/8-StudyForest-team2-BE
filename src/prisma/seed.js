@@ -1,7 +1,7 @@
-// seed.js
+// src/prisma/seed.js
 import { PrismaClient } from '@prisma/client';
 import { faker } from '@faker-js/faker';
-import bcrypt from 'bcryptjs';
+import * as argon2 from 'argon2';
 import crypto from 'crypto';
 
 const prisma = new PrismaClient();
@@ -15,9 +15,7 @@ const pickTwoDistinct = arr => {
   return [a, b];
 };
 
-const SALT_ROUNDS = 12;
-
-//  한국인 이름 샘플
+// 한국인 이름 샘플
 const KOREAN_NAMES = [
   '김민준',
   '이서준',
@@ -36,7 +34,7 @@ const KOREAN_NAMES = [
   '권주원',
 ];
 
-//  스터디 주제
+// 스터디 주제
 const STUDY_SUBJECTS = [
   '알고리즘 문제 풀이',
   '영어 단어 암기',
@@ -53,7 +51,7 @@ const STUDY_SUBJECTS = [
   'AI/머신러닝 기초',
 ];
 
-//  스터디 분위기 설명
+// 스터디 분위기 설명
 const STUDY_CONTENTS = [
   '매일 문제 풀이를 공유하고 피드백합니다.',
   '꾸준한 학습 습관을 만들고자 합니다.',
@@ -67,7 +65,7 @@ const STUDY_CONTENTS = [
   '기록과 인증으로 꾸준함을 유지합니다.',
 ];
 
-//  습관
+// 습관
 const HABITS = [
   '물 1리터 마시기',
   '운동 30분 하기',
@@ -76,13 +74,12 @@ const HABITS = [
   '독서 20분',
 ];
 
-// 안전한 랜덤 리프레시 토큰 생성(평문)
+// 안전한 랜덤 리프레시 토큰 평문 생성
 function createRefreshTokenPlain(bytes = 48) {
-  return crypto.randomBytes(bytes).toString('hex'); // 96자 hex
+  return crypto.randomBytes(bytes).toString('hex');
 }
 
 async function seedUsers(n = 5) {
-  // 고유한 한국인 이름 n개 선택 (부족하면 중복 허용)
   const baseNames =
     KOREAN_NAMES.length >= n
       ? faker.helpers.arrayElements(KOREAN_NAMES, n)
@@ -90,35 +87,29 @@ async function seedUsers(n = 5) {
           faker.helpers.arrayElement(KOREAN_NAMES),
         );
 
-  // 사용자 배열(비번/리프레시토큰 해시 포함) 생성
   const usersWithSecrets = await Promise.all(
     baseNames.map(async name => {
       const passwordPlain = faker.internet.password({
         length: faker.number.int({ min: 8, max: 16 }),
       });
-      const passwordHash = await bcrypt.hash(passwordPlain, SALT_ROUNDS);
+      const passwordHash = await argon2.hash(passwordPlain);
 
-      // 리프레시 토큰(평문) & 해시
       const refreshTokenPlain = createRefreshTokenPlain();
-      const refreshTokenHash = await bcrypt.hash(
-        refreshTokenPlain,
-        SALT_ROUNDS,
-      );
+      const refreshTokenHash = await argon2.hash(refreshTokenPlain);
 
       return {
         data: {
           username: name,
-          password: passwordHash, // ✅ 해시 저장
+          password: passwordHash,
           email: `${faker.string.alphanumeric({ length: 10, casing: 'lower' })}@example.com`,
           nick: name,
-          refreshToken: refreshTokenHash, // ✅ 해시 저장
+          refreshToken: refreshTokenHash,
         },
         debug: { username: name, passwordPlain, refreshTokenPlain },
       };
     }),
   );
 
-  // createMany는 해시 완료된 결과만 사용
   await prisma.user.createMany({
     data: usersWithSecrets.map(u => u.data),
     skipDuplicates: true,
