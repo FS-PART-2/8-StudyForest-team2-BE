@@ -2,6 +2,10 @@
 
 ###
 
+GET http://localhost:3000/study/manage
+
+###
+
 GET https://eight-studyforest-team2-be.onrender.com/study?offset=0&pointOrder=desc&recentOrder=recent
 
 ###
@@ -38,7 +42,7 @@ Content-Type: application/json
 
 ###
 
-PATCH https://eight-studyforest-team2-be.onrender.com/
+PATCH https://eight-studyforest-team2-be.onrender.com/study/30
 Content-Type: application/json
 
 {
@@ -52,7 +56,7 @@ Content-Type: application/json
 
 ###
 
-PATCH http://localhost:3000/study/22
+PATCH http://localhost:3000/study/30
 Content-Type: application/json
 
 {
@@ -75,7 +79,7 @@ Content-Type: application/json
 
 ###
 
-DELETE http://localhost:3000/study/18
+DELETE http://localhost:3000/study/25
 Content-Type: application/json
 
 {

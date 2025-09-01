@@ -4,6 +4,15 @@ import { createStudy, patchStudy } from '../structs.js';
 import studyService from '../services/study.services.js';
 import argon2 from 'argon2';
 
+// 관리를 위한 전체 스터디 목록 조회 API 컨트롤러
+async function controlGetStudy(req, res) {
+  /* 서비스 호출 */
+  const studies = await studyService.serviceGetStudy();
+
+  /* 결과 반환 */
+  res.status(200).json(studies);
+}
+
 // 스터디 목록 조회 API 컨트롤러
 async function controlStudyList(req, res) {
   /* 쿼리 파라미터 파싱 및 입력 검증 */
@@ -70,8 +79,15 @@ async function controlStudyCreate(req, res) {
 async function controlStudyUpdate(req, res) {
   /* 쿼리 파라미터 파싱 및 입력 검증 */
   assert(req.body, patchStudy);
-  const { nick, name, content, img, password, checkPassword, isActive } =
+  const { nick, name, content, img, password, isActive } =
     req.body;
+  const studyId = Number.parseInt(req.params.studyId, 10);
+  if (!Number.isFinite(studyId) || studyId <= 0) {
+    const err = new Error("유효하지 않은 스터디 ID입니다.");
+    err.status = 400;
+    err.code = 'INVALID_STUDY_ID';
+    throw err;
+  }
 
   if (typeof password !== 'string' || password.length === 0) {
     const err = new Error('비밀번호가 누락되었습니다.');
@@ -88,7 +104,6 @@ async function controlStudyUpdate(req, res) {
     content,
     img,
     password,
-    checkPassword,
     isActive,
   );
   if (!studyUpdate) {
@@ -154,6 +169,7 @@ async function controlStudyDetail(req, res) {
 }
 
 export default {
+  controlGetStudy,
   controlStudyList,
   controlStudyCreate,
   controlStudyUpdate,
