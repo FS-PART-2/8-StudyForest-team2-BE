@@ -35,4 +35,5 @@ async function getTodayHabitsController(req, res, next) {
     return next(err);
   }
 }
+export { getTodayHabitsController };
 export default { getTodayHabitsController };
