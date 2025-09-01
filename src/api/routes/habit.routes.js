@@ -13,10 +13,9 @@ import habitController from '../controllers/habit.controllers.js';
 const router = express.Router();
 
 router.use(corsMiddleware); // CORS 미들웨어 적용
-router.use(express.json());
 
 // 오늘의 습관 조회 API
-// GET /api/habits/today/:studyId?password=...
+// GET /api/habits/today/:studyId  Password: prefer header `x-password: <pwd>` or JSON body `{ "password": "<pwd>" }`
 router.get(
   '/habits/today/:studyId',
   errorMiddleware.asyncHandler(habitController.getTodayHabitsController),
