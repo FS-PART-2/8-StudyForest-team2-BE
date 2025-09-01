@@ -7,5 +7,4 @@
 .env.*.local
 
 # 빌드 출력물
-/package-lock.json
 /node_modules/
