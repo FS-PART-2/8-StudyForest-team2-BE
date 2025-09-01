@@ -1,21 +1,35 @@
-// Description: API를 위한 라우터 설정 코드 파일입니다.
+// Description: 습관(Habit) 관련 API 라우터 설정 파일입니다.
+
+// 라이브러리 정의
 import express from 'express';
-import coreMiddleware from '../../../src/common/cors.js';
-import errorMiddleware from '../../../src/common/error.js'; // 에러를 추가할 일이 있다면, 해당 파일에 케이스를 추가해주시기 바랍니다.
+// 미들웨어 정의
+import corsMiddleware from '../../common/cors.js';
+
+// 컨트롤러 정의 (오늘의 습관 조회)
+import { asyncHandler, errorHandler } from '../../common/error.js'; // 에러 케이스 추가는 여기서 관리
+import { getTodayHabitsController } from '../controllers/habit.controllers.js';
 
 const router = express.Router();
 
-router.use(coreMiddleware); // CORS 미들웨어 적용
+function validateStudyId(req, res, next) {
+  const { studyId } = req.params;
+  if (!/^\d+$/.test(String(studyId))) {
+    return res.status(400).json({ message: 'Invalid studyId' });
+  }
+  return next();
+}
+router.use(corsMiddleware); // CORS 미들웨어 적용
 
-// 예시 API 엔드포인트
+// 오늘의 습관 조회 API
 router.get(
-  '/example-API',
-  errorMiddleware.asyncHandler(async (req, res) => {
-    res.json({ status: 'OK', message: 'This is example API' });
-  }),
+  '/habits/today/:studyId',
+  validateStudyId,
+  asyncHandler(getTodayHabitsController),
 );
 
-// 에러 핸들링 미들웨어 적용, 가장 마지막에 위치해야 합니다.
-router.use(errorMiddleware.errorHandler);
+// (필요 시 여기에 다른 habit 관련 엔드포인트를 추가)
+
+// 에러 핸들링 미들웨어 (맨 마지막)
+router.use(errorHandler);
 
 export default router;
