@@ -3,7 +3,7 @@
 import express from 'express';
 
 // 미들웨어 정의
-import corsMiddleware from '../../common/cors.js';
+import corsMiddleware from '../../common/cors';
 import errorMiddleware from '../../common/error.js'; // 에러를 추가할 일이 있다면, 해당 파일에 케이스를 추가해주시기 바랍니다.
 
 // 컨트롤러 정의
