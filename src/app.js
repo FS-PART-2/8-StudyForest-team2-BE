@@ -12,7 +12,7 @@ import dotenv from 'dotenv';
 import express from 'express';
 import morgan from 'morgan';
 import studyRoutes from '../src/api/routes/study.routes.js';
-
+import habitRoutes from '../src/api/routes/habit.routes.js';
 // 환경 변수 설정
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 if (!process.env.DATABASE_URL) {
@@ -28,6 +28,7 @@ app.use(express.json({ limit: '1mb' })); // JSON 파싱 미들웨어 추가
 app.use(express.urlencoded({ limit: '1mb', extended: true }));
 app.use(morgan('combined'));
 app.use('/study', studyRoutes);
+app.use('/api', habitRoutes);
 
 app.listen(3000, () => {
   console.log('Test server is running on port 3000');
