@@ -22,6 +22,12 @@ router.post(
   errorMiddleware.asyncHandler(studyController.controlStudyCreate),
 );
 
+// 스터디 삭제 API 엔드포인트
+router.delete(
+  '/:studyId',
+  errorMiddleware.asyncHandler(studyController.controlStudyDelete),
+);
+
 // // 예시 API 엔드포인트
 // router.get(
 //   '/example-API',

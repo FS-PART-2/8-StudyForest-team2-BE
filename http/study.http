@@ -18,3 +18,12 @@ Content-Type: application/json
     "checkPassword": "1234",
     "isActive": true
 }
+
+###
+
+DELETE http://localhost:3000/study/16
+Content-Type: application/json
+
+{
+  "password": "1234"
+}
