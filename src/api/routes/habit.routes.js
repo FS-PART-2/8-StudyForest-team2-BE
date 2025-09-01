@@ -2,20 +2,18 @@
 
 // 라이브러리 정의
 import express from 'express';
-
 // 미들웨어 정의
+import corsMiddleware from '../../common/cors';
 
+// 컨트롤러 정의 (오늘의 습관 조회)
 import { asyncHandler, errorHandler } from '../../common/error.js'; // 에러 케이스 추가는 여기서 관리
 import { getTodayHabitsController } from '../controllers/habit.controllers.js';
-// 컨트롤러 정의 (오늘의 습관 조회)
-import habitController from '../controllers/habit.controllers.js';
 
 const router = express.Router();
 
 router.use(corsMiddleware); // CORS 미들웨어 적용
 
 // 오늘의 습관 조회 API
-// GET /api/habits/today/:studyId  Password: prefer header `x-password: <pwd>` or JSON body `{ "password": "<pwd>" }`
 router.get('/habits/today/:studyId', asyncHandler(getTodayHabitsController));
 
 // (필요 시 여기에 다른 habit 관련 엔드포인트를 추가)
