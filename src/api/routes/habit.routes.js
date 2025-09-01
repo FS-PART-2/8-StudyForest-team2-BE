@@ -2,14 +2,6 @@
 
 // 라이브러리 정의
 import express from 'express';
-<<<<<<< HEAD
-import coreMiddleware from '../../../src/common/cors.js';
-import errorMiddleware from '../../../src/common/error.js'; // 에러를 추가할 일이 있다면, 해당 파일에 케이스를 추가해주시기 바랍니다.
-
-const router = express.Router();
-
-router.use(coreMiddleware); // CORS 미들웨어 적용
-=======
 
 // 미들웨어 정의
 import corsMiddleware from '../../common/cors.js';
@@ -22,7 +14,6 @@ const router = express.Router();
 
 router.use(corsMiddleware); // CORS 미들웨어 적용
 router.use(express.json());
->>>>>>> 1cf3104 (feat: 오늘의 습관 API 작성)
 
 // 오늘의 습관 조회 API
 // GET /api/habits/today/:studyId?password=...
