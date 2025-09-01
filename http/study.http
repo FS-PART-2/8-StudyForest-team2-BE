@@ -21,4 +21,9 @@ Content-Type: application/json
 
 ###
 
-DELETE http://localhost:3000/study/16?password=1234
+DELETE http://localhost:3000/study/16
+Content-Type: application/json
+
+{
+  "password": "1234"
+}

@@ -105,6 +105,13 @@ async function serviceStudyDelete(studyId, password) {
       throw err;
     }
 
+    if (!password) {
+      const err = new Error('비밀번호가 누락되었습니다.');
+      err.status = 400;
+      err.code = 'PASSWORD_REQUIRED';
+      throw err;
+    }
+
     const isPasswordValid = await argon2.verify(study.password, password);
     if (!isPasswordValid) {
       const err = new Error('비밀번호가 일치하지 않습니다.');

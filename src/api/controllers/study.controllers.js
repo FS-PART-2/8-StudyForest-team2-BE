@@ -75,14 +75,19 @@ async function controlStudyDelete(req, res) {
     throw err;
   }
 
+  const password = req.body.password;
+  if (typeof password !== 'string' || password.length === 0) {
+    const err = new Error('비밀번호가 누락되었습니다.');
+    err.status = 400;
+    err.code = 'PASSWORD_REQUIRED';
+    throw err;
+  }
+
   /* 서비스 호출 */
-  const studyDelete = await studyService.serviceStudyDelete(
-    studyId,
-    req.query.password,
-  );
+  await studyService.serviceStudyDelete(studyId, password);
 
   /* 결과 반환 */
-  res.status(201).json(studyDelete);
+  res.status(204).end();
 }
 
 export default { controlStudyList, controlStudyCreate, controlStudyDelete };
