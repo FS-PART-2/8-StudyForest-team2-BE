@@ -3,6 +3,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import argon2 from 'argon2';
 
 const prisma = new PrismaClient();
 
@@ -10,27 +11,30 @@ const prisma = new PrismaClient();
  * 오늘(KST) 00:00~24:00 범위(UTC 기준) 계산
  */
 function getKSTDayRange(now = new Date()) {
-  const kstNow = new Date(
-    new Date(now).toLocaleString('en-US', { timeZone: 'Asia/Seoul' }),
+  // KST = UTC+09, DST 없음
+  const nowKst = new Date(now.getTime() + 9 * 3600000);
+  const startKstUTC = Date.UTC(
+    nowKst.getUTCFullYear(),
+    nowKst.getUTCMonth(),
+    nowKst.getUTCDate(),
+    0,
+    0,
+    0,
+    0,
   );
+  const endKstUTC = startKstUTC + 24 * 3600000;
+  const startUtc = new Date(startKstUTC - 9 * 3600000);
+  const endUtc = new Date(endKstUTC - 9 * 3600000);
 
-  const startKst = new Date(kstNow);
-  startKst.setHours(0, 0, 0, 0);
-
-  const endKst = new Date(startKst);
-  endKst.setDate(endKst.getDate() + 1);
-
-  // KST → UTC 변환 (−9시간)
-  const startUtc = new Date(startKst.getTime() - 9 * 3600000);
-  const endUtc = new Date(endKst.getTime() - 9 * 3600000);
-
-  // YYYY-MM-DD (KST)
-  const yyyy = startKst.getFullYear();
-  const mm = String(startKst.getMonth() + 1).padStart(2, '0');
-  const dd = String(startKst.getDate()).padStart(2, '0');
+  const yyyy = String(nowKst.getUTCFullYear());
+  const mm = String(nowKst.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(nowKst.getUTCDate()).padStart(2, '0');
   const kstDateStr = `${yyyy}-${mm}-${dd}`;
-
-  return { startUtc, endUtc, nowKstIso: kstNow.toISOString(), kstDateStr };
+  const hh = String(nowKst.getUTCHours()).padStart(2, '0');
+  const mi = String(nowKst.getUTCMinutes()).padStart(2, '0');
+  const ss = String(nowKst.getUTCSeconds()).padStart(2, '0');
+  const nowKstIso = `${yyyy}-${mm}-${dd}T${hh}:${mi}:${ss}+09:00`;
+  return { startUtc, endUtc, nowKstIso, kstDateStr };
 }
 
 export default async function getTodayHabitsService({ studyId, password }) {
@@ -53,14 +57,19 @@ export default async function getTodayHabitsService({ studyId, password }) {
   }
 
   let ok = false;
+  const hash = study.password ?? '';
   try {
-    ok = await bcrypt.compare(password, study.password);
-  } catch (err) {
+    if (typeof hash === 'string' && hash.startsWith('$argon2')) {
+      ok = await argon2.verify(hash, password);
+    } else if (typeof hash === 'string' && /^\$2[aby]\$/.test(hash)) {
+      ok = await bcrypt.compare(password, hash);
+    } else {
+      // seed 등 평문 대비
+      ok = password === hash;
+    }
+  } catch (_) {
     ok = false;
   }
-
-  // 개발 초기에 해시 저장이 안 됐다면 평문 비교도 허용
-  if (!ok && password === study.password) ok = true;
 
   if (!ok) {
     const e = new Error('비밀번호가 일치하지 않습니다.');
@@ -75,7 +84,7 @@ export default async function getTodayHabitsService({ studyId, password }) {
   const habits = await prisma.habit.findMany({
     where: {
       date: { gte: startUtc, lt: endUtc },
-      habitHistory: { studyId },
+      habitHistory: { is: { studyId } },
     },
     select: {
       id: true,

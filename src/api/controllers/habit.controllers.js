@@ -11,9 +11,16 @@ async function getTodayHabitsController(req, res, next) {
         .json({ message: 'studyId는 1 이상의 정수여야 합니다.' });
     }
 
-    const { password } = req.query;
-    if (!password || typeof password !== 'string') {
-      return res.status(400).json({ message: 'password query가 필요합니다.' });
+    const headerPwd = req.get('x-study-password');
+    const bodyPwd =
+      typeof req.body?.password === 'string' ? req.body.password : undefined;
+    const password =
+      typeof headerPwd === 'string' && headerPwd.length > 0
+        ? headerPwd
+        : bodyPwd;
+
+    if (!password) {
+      return res.status(400).json({ message: '비밀번호가 필요합니다.' });
     }
 
     const data = await getTodayHabitsService({ studyId, password });
