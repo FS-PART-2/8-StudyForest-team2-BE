@@ -1,7 +1,7 @@
 // Express, Prisma, JWT 등의 에러 처리는 이곳에서 할 수 있도록 수정해 주세요.
 import { Prisma } from '@prisma/client';
 
-function asyncHandler(handler) {
+export function asyncHandler(handler) {
   async function asyncReqHandler(req, res, next) {
     try {
       await handler(req, res, next);
@@ -13,7 +13,7 @@ function asyncHandler(handler) {
   return asyncReqHandler;
 }
 
-function errorHandler(err, req, res, next) {
+export function errorHandler(err, req, res, next) {
   // 이곳에서 공통 에러를 처리해주세요
   // Prisma Client 에러 처리
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
