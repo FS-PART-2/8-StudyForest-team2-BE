@@ -5,7 +5,7 @@ const envFile = '.env';
 dotenv.config({ path: envFile });
 
 const corsOptions = {
-  origin: [process.env.FE_DOMAIN || 'http://localhost:5173'], // 허용할 도메인
+  origin: ['http://localhost:5173', process.env.FE_DOMAIN], // 허용할 도메인
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'], // 허용할 HTTP 메서드
   allowedHeaders: ['Content-Type', 'Authorization'], // 허용할 헤더
   credentials: true, // 쿠키 인증을 사용함
