@@ -71,7 +71,7 @@ async function serviceStudyCreate(
   isActive,
 ) {
   try {
-    const studyCreate = await prisma.study.create({
+    return await prisma.study.create({
       data: { nick, name, content, img, password: passwordHash, isActive },
       select: {
         id: true,
@@ -84,8 +84,6 @@ async function serviceStudyCreate(
         updatedAt: true,
       },
     });
-
-    return studyCreate;
   } catch (error) {
     console.log(error, '가 발생했습니다.');
     throw error;
@@ -129,4 +127,55 @@ async function serviceStudyDelete(studyId, password) {
   }
 }
 
-export default { serviceStudyList, serviceStudyCreate, serviceStudyDelete };
+async function serviceStudyDetail(studyId) {
+  try {
+    const [detail, pointsAgg] = await Promise.all([
+      prisma.study.findUnique({
+        where: { id: studyId /* 필요 시 isActive: true 추가 고려 */ },
+        select: {
+          id: true,
+          nick: true,
+          name: true,
+          content: true,
+          img: true,
+          isActive: true,
+          createdAt: true,
+          updatedAt: true,
+          studyEmojis: {
+            select: {
+              count: true,
+              emoji: true, // 관계 필드 가정: 이모지 정보 포함
+            },
+            orderBy: { count: 'desc' },
+          },
+          habitHistories: {
+            orderBy: { weekDate: 'desc' },
+            take: 1, // 최신 1개만 예시
+            include: { habits: true },
+          },
+          _count: {
+            select: { points: true, studyEmojis: true, habitHistories: true },
+          },
+        },
+      }),
+      // 포인트 총합 노출이 필요하다면 활성화
+      prisma.point.aggregate({
+        where: { studyId },
+        _sum: { value: true },
+      }),
+    ]);
+
+    if (!detail) return null;
+    return { ...detail, pointsSum: pointsAgg._sum.value ?? 0 };
+  } catch (error) {
+    console.log(error, '가 발생했습니다.');
+    throw error;
+  }
+}
+
+export default {
+  serviceStudyList,
+  serviceStudyCreate,
+  serviceStudyDelete,
+  serviceStudyDetail,
+};
