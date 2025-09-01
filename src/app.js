@@ -12,7 +12,7 @@ import dotenv from 'dotenv';
 import express from 'express';
 import morgan from 'morgan';
 import studyRoutes from '../src/api/routes/study.routes.js';
-import habitRoutes from './api/routes/habit.routes.js';
+import habitRoutes from '../src/api/routes/habit.routes.js';
 // 환경 변수 설정
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 if (!process.env.DATABASE_URL) {
