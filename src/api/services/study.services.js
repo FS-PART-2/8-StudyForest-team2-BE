@@ -161,7 +161,7 @@ async function serviceStudyDetail(studyId) {
       // 포인트 총합 노출이 필요하다면 활성화
       prisma.point.aggregate({
         where: { studyId },
-        _sum: { point: true },
+        _sum: { value: true },
       }),
     ]);
 
