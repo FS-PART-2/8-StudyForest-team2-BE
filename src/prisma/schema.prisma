@@ -23,8 +23,8 @@ model Study {
   name      String
   content   String?
   img       String?
-  password  String?
-  isActive  Boolean  @default(false) //활성화, 비활성화 구분
+  password  String
+  isActive  Boolean  @default(true) //활성화, 비활성화 구분
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
