@@ -4,8 +4,14 @@ import getTodayHabitsService from '../services/habit.services.js';
 
 async function getTodayHabitsController(req, res, next) {
   try {
-    const studyId = Number(req.params.studyId);
-    if (!Number.isInteger(studyId) || studyId <= 0) {
+    const studyIdStr = req.params.studyId;
+    if (!/^\d+$/.test(studyIdStr)) {
+      return res
+        .status(400)
+        .json({ message: 'studyId는 1 이상의 정수여야 합니다.' });
+    }
+    const studyId = Number.parseInt(studyIdStr, 10);
+    if (studyId <= 0) {
       return res
         .status(400)
         .json({ message: 'studyId는 1 이상의 정수여야 합니다.' });
@@ -22,8 +28,9 @@ async function getTodayHabitsController(req, res, next) {
     if (!password) {
       return res.status(400).json({ message: '비밀번호가 필요합니다.' });
     }
-
     const data = await getTodayHabitsService({ studyId, password });
+    res.set('Cache-Control', 'no-store');
+    res.vary('x-study-password');
     return res.json(data);
   } catch (err) {
     if (err.name === 'UnauthorizedError') {

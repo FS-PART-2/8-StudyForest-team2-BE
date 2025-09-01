@@ -1,15 +1,19 @@
+// src/api/routes/habit.routes.js
 // Description: 습관(Habit) 관련 API 라우터 설정 파일입니다.
 
-// 라이브러리 정의
 import express from 'express';
-// 미들웨어 정의
-import corsMiddleware from '../../common/cors.js';
 
-// 컨트롤러 정의 (오늘의 습관 조회)
-import { asyncHandler, errorHandler } from '../../common/error.js'; // 에러 케이스 추가는 여기서 관리
+// 미들웨어 (경로 하나만)
+import corsMiddleware from '../../common/cors.js';
+import { asyncHandler, errorHandler } from '../../common/error.js';
+
+// 컨트롤러 (named export)
 import { getTodayHabitsController } from '../controllers/habit.controllers.js';
 
 const router = express.Router();
+
+router.use(corsMiddleware);
+router.use(express.json());
 
 function validateStudyId(req, res, next) {
   const { studyId } = req.params;
@@ -18,18 +22,28 @@ function validateStudyId(req, res, next) {
   }
   return next();
 }
-router.use(corsMiddleware); // CORS 미들웨어 적용
 
-// 오늘의 습관 조회 API
+// 예시 API (경로 분리)
+router.get(
+  '/example-API',
+  asyncHandler(async (req, res) => {
+    res.json({ status: 'OK', message: 'This is example API' });
+  }),
+);
+
+// 오늘의 습관 조회 API (GET: 헤더 x-study-password / POST: 바디 password)
 router.get(
   '/habits/today/:studyId',
   validateStudyId,
   asyncHandler(getTodayHabitsController),
 );
+router.post(
+  '/habits/today/:studyId',
+  validateStudyId,
+  asyncHandler(getTodayHabitsController),
+);
 
-// (필요 시 여기에 다른 habit 관련 엔드포인트를 추가)
-
-// 에러 핸들링 미들웨어 (맨 마지막)
+// 에러 핸들러 (맨 마지막)
 router.use(errorHandler);
 
 export default router;
