@@ -30,7 +30,6 @@
 // const router = express.Router();
 //
 // router.use(coreMiddleware); // CORS 미들웨어 적용
-// router.use(express.json());
 //
 // // 예시 API 엔드포인트
 // router.get(

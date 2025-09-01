@@ -34,13 +34,18 @@
     "eslint-plugin-react-hooks": "^4.3.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.5",
+    "nodemon": "^3.1.7",
     "prettier": "^3.6.2",
-    "prisma": "^6.15.0",
-    "nodemon": "^3.1.7"
+    "prisma": "^6.15.0"
   },
   "dependencies": {
     "@faker-js/faker": "^10.0.0",
-    "@prisma/client": "^6.15.0"
+    "@prisma/client": "^6.15.0",
+    "argon2": "^0.44.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "morgan": "^1.10.1",
+    "superstruct": "^2.0.2"
   },
   "prisma": {
     "schema": "src/prisma/schema.prisma",

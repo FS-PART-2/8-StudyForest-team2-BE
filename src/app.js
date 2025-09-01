@@ -22,10 +22,10 @@ if (!process.env.DATABASE_URL) {
   }
 }
 
-
 const app = express();
 
-app.use(express.json()); // JSON 파싱 미들웨어 추가
+app.use(express.json({ limit: '1mb' })); // JSON 파싱 미들웨어 추가
+app.use(express.urlencoded({ limit: '1mb', extended: true }));
 app.use(morgan('combined'));
 app.use('/study', studyRoutes);
 

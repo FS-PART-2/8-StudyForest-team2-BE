@@ -12,10 +12,15 @@ import studyController from '../controllers/study.controllers.js';
 const router = express.Router();
 
 router.use(corsMiddleware); // CORS 미들웨어 적용
-router.use(express.json());
 
 // 스터디 목록 조회 API 엔드포인트
 router.get('/', errorMiddleware.asyncHandler(studyController.controlStudyList));
+
+// 스터디 생성 API 엔드포인트
+router.post(
+  '/',
+  errorMiddleware.asyncHandler(studyController.controlStudyCreate),
+);
 
 // // 예시 API 엔드포인트
 // router.get(

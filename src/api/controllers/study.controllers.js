@@ -1,5 +1,8 @@
 // 요청 파싱(params/query/body) + 입력 검증 결과 처리
+import { assert } from 'superstruct';
+import { createStudy } from '../structs.js';
 import studyService from '../services/study.services.js';
+import argon2 from 'argon2';
 
 // 스터디 목록 조회 API
 async function controlStudyList(req, res) {
@@ -34,4 +37,30 @@ async function controlStudyList(req, res) {
   res.json(studyList);
 }
 
-export default { controlStudyList };
+async function controlStudyCreate(req, res) {
+  /* 입력 검증 */
+  assert(req.body, createStudy);
+  const { nick, name, content, img, password, checkPassword, isActive } =
+    req.body;
+  if (password !== checkPassword) {
+    const err = new Error('비밀번호와 확인용 비밀번호가 일치하지 않습니다.');
+    err.status = 400;
+    err.code = 'PASSWORD_MISMATCH';
+    throw err;
+  }
+  const passwordHash = await argon2.hash(password);
+  /* 서비스 호출 */
+  const studyCreate = await studyService.serviceStudyCreate(
+    nick,
+    name,
+    content,
+    img,
+    passwordHash,
+    isActive,
+  );
+
+  /* 결과 반환 */
+  res.status(201).location(`/study/${studyCreate.id}`).json(studyCreate);
+}
+
+export default { controlStudyList, controlStudyCreate };
