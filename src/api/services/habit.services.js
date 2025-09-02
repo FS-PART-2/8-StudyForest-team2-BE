@@ -22,6 +22,7 @@ function getKSTDayRange(now = new Date()) {
     0,
   );
   const endKstUTC = startKstUTC + 24 * 3600000;
+
   const startUtc = new Date(startKstUTC - 9 * 3600000);
   const endUtc = new Date(endKstUTC - 9 * 3600000);
 
@@ -29,23 +30,26 @@ function getKSTDayRange(now = new Date()) {
   const mm = String(nowKst.getUTCMonth() + 1).padStart(2, '0');
   const dd = String(nowKst.getUTCDate()).padStart(2, '0');
   const kstDateStr = `${yyyy}-${mm}-${dd}`;
+
   const hh = String(nowKst.getUTCHours()).padStart(2, '0');
   const mi = String(nowKst.getUTCMinutes()).padStart(2, '0');
   const ss = String(nowKst.getUTCSeconds()).padStart(2, '0');
   const nowKstIso = `${yyyy}-${mm}-${dd}T${hh}:${mi}:${ss}+09:00`;
+
   return { startUtc, endUtc, nowKstIso, kstDateStr };
 }
 
 /**
- * 주 시작일(월요일 00:00 KST)의 UTC Date 반환 + 주 끝(일요일 24:00 직전)
+ * 주 시작일(월요일 00:00 KST)의 UTC Date 반환 + 주 끝(다음주 월요일 00:00 KST 직전)
  */
-function getKSTWeekRange(dateInput) {
+function getKSTWeekRange(dateInput /* string|Date|undefined */) {
   const base = dateInput ? new Date(dateInput) : new Date();
-  const baseKst = new Date(base.getTime() + 9 * 3600000);
+  const baseKst = new Date(base.getTime() + 9 * 3600000); // to KST
 
-  const day = baseKst.getUTCDay();
+  // JS: 0=Sun ~ 6=Sat → 월요일을 주 시작으로
+  const day = baseKst.getUTCDay(); // (KST clock)
+  const diffToMon = (day + 6) % 7; // Mon=0, Tue=1, ... Sun=6
 
-  const diffToMon = (day + 6) % 7;
   const monKstUTC = Date.UTC(
     baseKst.getUTCFullYear(),
     baseKst.getUTCMonth(),
@@ -55,24 +59,22 @@ function getKSTWeekRange(dateInput) {
     0,
     0,
   );
-  const monUtc = new Date(monKstUTC - 9 * 3600000);
-  const sunUtcEnd = new Date(monUtc.getTime() + 7 * 24 * 3600000);
-  const weekDateOnly = new Date(monUtc); // HabitHistory.weekDate용(날짜 컬럼이면 날짜만 사용)
 
-  const yyyy = String(baseKst.getUTCFullYear());
-  const mm = String(baseKst.getUTCMonth() + 1).padStart(2, '0');
-  const dd = String(baseKst.getUTCDate()).padStart(2, '0');
-  const kstDateStr = `${yyyy}-${mm}-${dd}`;
+  const monUtc = new Date(monKstUTC - 9 * 3600000); // 주 시작(UTC)
+  const nextMonUtc = new Date(monUtc.getTime() + 7 * 24 * 3600000); // 주 끝(미포함)
+  const weekDateOnly = new Date(monUtc); // HabitHistory.weekDate용 (@db.Date)
 
   return {
     weekStartUtc: monUtc, // 포함
-    weekEndUtc: sunUtcEnd, // 미포함
+    weekEndUtc: nextMonUtc, // 미포함
     weekDateOnly, // HabitHistory.weekDate용
-    kstDateStr, // 요청 기준 일자(문자열)
   };
 }
 
-/* 스터디 + 비밀번호 검증 (argon2/평문 seed 지원) */
+/**
+ * 스터디 + 비밀번호 검증 (argon2/평문 seed 지원)
+ * - 컨트롤러에서 password 누락은 400으로 걸러지므로 여기서는 불일치만 401 처리
+ */
 async function assertStudyWithPassword({ studyId, password }) {
   const study = await prisma.study.findUnique({
     where: { id: studyId },
@@ -83,7 +85,8 @@ async function assertStudyWithPassword({ studyId, password }) {
     e.name = 'NotFoundError';
     throw e;
   }
-  if (!password || !study.password) {
+  if (!study.password) {
+    // 비번이 설정되지 않은 스터디는 정책상 인증 불가로 처리
     const e = new Error('비밀번호가 필요합니다.');
     e.name = 'UnauthorizedError';
     throw e;
@@ -111,12 +114,12 @@ async function assertStudyWithPassword({ studyId, password }) {
   return study;
 }
 
-/* GET 오늘의 습관 조회 */
+/*  GET 오늘의 습관 조회 */
 export default async function getTodayHabitsService({ studyId, password }) {
   // 1) 인증
   const study = await assertStudyWithPassword({ studyId, password });
 
-  // 2) 오늘 범위 계산
+  // 2) 오늘 범위 계산 (KST)
   const { startUtc, endUtc, nowKstIso, kstDateStr } = getKSTDayRange();
 
   // 3) 오늘 습관 조회
@@ -154,12 +157,12 @@ export default async function getTodayHabitsService({ studyId, password }) {
   };
 }
 
-/* POST 오늘의 습관 생성 */
+/* POST 오늘의 습관 생성*/
 export async function createTodayHabitsService({ studyId, password, titles }) {
   const study = await assertStudyWithPassword({ studyId, password });
 
   const { startUtc, endUtc, nowKstIso, kstDateStr } = getKSTDayRange();
-  const { weekStartUtc, weekDateOnly } = getKSTWeekRange(startUtc);
+  const { weekDateOnly } = getKSTWeekRange(startUtc);
 
   // 1) 해당 주 HabitHistory upsert
   const hh = await prisma.habitHistory.upsert({
@@ -175,18 +178,17 @@ export async function createTodayHabitsService({ studyId, password, titles }) {
   // 2) 오늘 날짜에 대해 타이틀들 생성 (중복은 unique 제약으로 스킵)
   const dataToCreate = titles.map(title => ({
     habit: title.trim(),
-    date: startUtc, // 00:00 UTC 환산 기준(오늘)
+    date: startUtc, // KST 00:00을 UTC로 환산한 시각
     isDone: false,
     habitHistoryId: hh.id,
   }));
 
-  // createMany는 unique 충돌 시 skipDuplicates 사용
   const createRes = await prisma.habit.createMany({
     data: dataToCreate,
     skipDuplicates: true,
   });
 
-  // 3) 오늘 생성/전체 목록 반환
+  // 3) 오늘 전체 목록 반환
   const habits = await prisma.habit.findMany({
     where: {
       date: { gte: startUtc, lt: endUtc },
@@ -212,7 +214,7 @@ export async function createTodayHabitsService({ studyId, password, titles }) {
 
 /* PATCH 오늘의 습관 체크/해제 (토글) */
 export async function toggleHabitService({ habitId, password }) {
-  // habit + history + study로 따라 들어가 비밀번호 검증
+  // 1) 대상 조회
   const target = await prisma.habit.findUnique({
     where: { id: habitId },
     select: {
@@ -236,20 +238,20 @@ export async function toggleHabitService({ habitId, password }) {
     throw e;
   }
 
-  // 스터디 인증
+  // 2) 스터디 인증
   await assertStudyWithPassword({
     studyId: target.habitHistory.studyId,
     password,
   });
 
-  // 토글
+  // 3) 토글
   const updated = await prisma.habit.update({
     where: { id: habitId },
     data: { isDone: !target.isDone },
     select: { id: true, isDone: true, date: true, habitHistoryId: true },
   });
 
-  // KST 기준 오늘 날짜 문자열을 만들어 day-of-week 판정
+  // 4) 동일한 KST 날짜의 완료 여부(ANY)로 요약 필드 갱신
   const kRange = getKSTDayRange(updated.date);
   const dayHabits = await prisma.habit.findMany({
     where: {
@@ -260,7 +262,7 @@ export async function toggleHabitService({ habitId, password }) {
   });
   const anyDone = dayHabits.some(h => h.isDone);
 
-  // KST 기준 요일: 0=일 ~ 6=토
+  // KST 요일: 0=일 ~ 6=토
   const kst = new Date(updated.date.getTime() + 9 * 3600000);
   const dow = kst.getUTCDay();
 
@@ -288,12 +290,13 @@ export async function toggleHabitService({ habitId, password }) {
   };
 }
 
-/** GET 주간 습관 기록 조회 */
+/* GET 주간 습관 기록 조회 (KST 기준으로 days 키 통일) */
 export async function getWeekHabitsService({ studyId, password, dateStr }) {
   const study = await assertStudyWithPassword({ studyId, password });
 
   const { weekStartUtc, weekEndUtc, weekDateOnly } = getKSTWeekRange(dateStr);
 
+  // 주간 요약(HabitHistory) 조회 (없을 수도 있음)
   const history = await prisma.habitHistory.findUnique({
     where: { studyId_weekDate: { studyId, weekDate: weekDateOnly } },
     select: {
@@ -308,7 +311,7 @@ export async function getWeekHabitsService({ studyId, password, dateStr }) {
     },
   });
 
-  // 해당 주에 단 한 번도 오늘의 습관 생성이 없었다면 history가 없을 수 있음
+  // 해당 주의 모든 Habit 조회
   const habits = await prisma.habit.findMany({
     where: {
       date: { gte: weekStartUtc, lt: weekEndUtc },
@@ -317,24 +320,29 @@ export async function getWeekHabitsService({ studyId, password, dateStr }) {
     orderBy: [{ date: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }],
   });
 
-  // 응답용: 날짜별 → [ {habitId, title, isDone} ]
+  // KST 기준으로 days 초기 키 생성 (YYYY-MM-DD)
   const days = {};
   for (let i = 0; i < 7; i++) {
-    const d = new Date(weekStartUtc.getTime() + i * 24 * 3600000);
-    days[d.toISOString().slice(0, 10)] = [];
+    const d = new Date(weekStartUtc.getTime() + i * 24 * 3600000); // UTC 시각
+    const dKst = new Date(d.getTime() + 9 * 3600000); // → KST 시각
+    const key = dKst.toISOString().slice(0, 10); // YYYY-MM-DD
+    days[key] = [];
   }
+
+  // 각 habit을 KST 날짜 키로 푸시
   habits.forEach(h => {
-    const ymd = new Date(h.date.getTime() + 9 * 3600000) // to KST
+    const ymdKst = new Date(h.date.getTime() + 9 * 3600000)
       .toISOString()
       .slice(0, 10);
-    if (!days[ymd]) days[ymd] = [];
-    days[ymd].push({
+    if (!days[ymdKst]) days[ymdKst] = [];
+    days[ymdKst].push({
       habitId: h.id,
       title: h.habit,
       isDone: h.isDone,
     });
   });
 
+  // 응답 (week.start/end도 KST 문자열로 표시)
   return {
     study: { id: study.id, name: study.name, isActive: study.isActive },
     week: {
@@ -344,7 +352,7 @@ export async function getWeekHabitsService({ studyId, password, dateStr }) {
       end: new Date(weekEndUtc.getTime() - 1 + 9 * 3600000)
         .toISOString()
         .slice(0, 10),
-      weekDate: weekDateOnly, // HabitHistory.weekDate
+      weekDate: weekDateOnly, // HabitHistory.weekDate (@db.Date)
       summary: history
         ? {
             monDone: history.monDone,
@@ -360,3 +368,5 @@ export async function getWeekHabitsService({ studyId, password, dateStr }) {
     days,
   };
 }
+
+export { getKSTDayRange, getKSTWeekRange, assertStudyWithPassword };

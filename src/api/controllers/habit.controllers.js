@@ -1,3 +1,4 @@
+// src/api/controllers/habit.controllers.js
 // 요청 파싱(params/query) + 입력 검증 + 서비스 호출 + 에러 변환
 
 import getTodayHabitsService, {
@@ -6,7 +7,7 @@ import getTodayHabitsService, {
   getWeekHabitsService,
 } from '../services/habit.services.js';
 
-/*오늘의 습관 조회 */
+/* 오늘의 습관 조회 */
 async function getTodayHabitsController(req, res, next) {
   try {
     const studyIdStr = req.params.studyId;
@@ -33,6 +34,7 @@ async function getTodayHabitsController(req, res, next) {
     if (!password) {
       return res.status(400).json({ message: '비밀번호가 필요합니다.' });
     }
+
     const data = await getTodayHabitsService({ studyId, password });
     res.set('Cache-Control', 'no-store');
     res.vary('x-study-password');
@@ -48,7 +50,7 @@ async function getTodayHabitsController(req, res, next) {
   }
 }
 
-/*오늘의 습관 생성 (배열로 들어온 title들을 오늘 날짜로 생성)*/
+/* 오늘의 습관 생성 (배열로 들어온 title들을 오늘 날짜로 생성) */
 async function createTodayHabitsController(req, res, next) {
   try {
     const studyIdStr = req.params.studyId;
@@ -58,6 +60,11 @@ async function createTodayHabitsController(req, res, next) {
         .json({ message: 'studyId는 1 이상의 정수여야 합니다.' });
     }
     const studyId = Number.parseInt(studyIdStr, 10);
+    if (studyId <= 0) {
+      return res
+        .status(400)
+        .json({ message: 'studyId는 1 이상의 정수여야 합니다.' });
+    }
 
     const headerPwd = req.get('x-study-password');
     const bodyPwd =
@@ -67,6 +74,11 @@ async function createTodayHabitsController(req, res, next) {
         ? headerPwd
         : bodyPwd;
 
+    if (!password) {
+      return res.status(400).json({ message: '비밀번호가 필요합니다.' });
+    }
+
+    // 입력 정규화: habits(string[]) 또는 items[{title}]
     let titles = [];
     if (Array.isArray(req.body?.habits)) {
       titles = req.body.habits.filter(
@@ -105,8 +117,7 @@ async function createTodayHabitsController(req, res, next) {
   }
 }
 
-/** 오늘의 습관 체크/해제 (토글) */
-
+/* 오늘의 습관 체크/해제 (토글) */
 async function toggleHabitController(req, res, next) {
   try {
     const habitIdStr = req.params.habitId;
@@ -116,6 +127,11 @@ async function toggleHabitController(req, res, next) {
         .json({ message: 'habitId는 1 이상의 정수여야 합니다.' });
     }
     const habitId = Number.parseInt(habitIdStr, 10);
+    if (habitId <= 0) {
+      return res
+        .status(400)
+        .json({ message: 'habitId는 1 이상의 정수여야 합니다.' });
+    }
 
     const headerPwd = req.get('x-study-password');
     const bodyPwd =
@@ -124,6 +140,10 @@ async function toggleHabitController(req, res, next) {
       typeof headerPwd === 'string' && headerPwd.length > 0
         ? headerPwd
         : bodyPwd;
+
+    if (!password) {
+      return res.status(400).json({ message: '비밀번호가 필요합니다.' });
+    }
 
     const data = await toggleHabitService({ habitId, password });
     res.set('Cache-Control', 'no-store');
@@ -140,8 +160,7 @@ async function toggleHabitController(req, res, next) {
   }
 }
 
-/* 주간 습관 기록 조회*/
-
+/* 주간 습관 기록 조회 */
 async function getWeekHabitsController(req, res, next) {
   try {
     const studyIdStr = req.params.studyId;
@@ -151,6 +170,11 @@ async function getWeekHabitsController(req, res, next) {
         .json({ message: 'studyId는 1 이상의 정수여야 합니다.' });
     }
     const studyId = Number.parseInt(studyIdStr, 10);
+    if (studyId <= 0) {
+      return res
+        .status(400)
+        .json({ message: 'studyId는 1 이상의 정수여야 합니다.' });
+    }
 
     const headerPwd = req.get('x-study-password');
     const bodyPwd =
@@ -159,6 +183,10 @@ async function getWeekHabitsController(req, res, next) {
       typeof headerPwd === 'string' && headerPwd.length > 0
         ? headerPwd
         : bodyPwd;
+
+    if (!password) {
+      return res.status(400).json({ message: '비밀번호가 필요합니다.' });
+    }
 
     const dateStr =
       typeof req.query?.date === 'string' ? req.query.date : undefined;
