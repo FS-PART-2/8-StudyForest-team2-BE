@@ -257,7 +257,7 @@ async function serviceStudyDetail(studyId) {
 // 스터디 이모지 업데이트 API 서비스
 async function serviceStudyUpdateEmojis(studyId, emojiId, emoji_count) {
   try {
-    return await prisma.studyEmoji.upsert(
+    return await prisma.studyEmoji.update(
       where: {
         studyId_emojiId: {
           studyId: studyId,
