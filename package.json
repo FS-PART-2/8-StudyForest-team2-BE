@@ -47,7 +47,9 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "morgan": "^1.10.1",
-    "superstruct": "^2.0.2"
+    "superstruct": "^2.0.2",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
   },
   "prisma": {
     "schema": "src/prisma/schema.prisma",
