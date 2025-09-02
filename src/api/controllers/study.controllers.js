@@ -168,6 +168,35 @@ async function controlStudyDetail(req, res) {
   res.status(200).json(studyDetail);
 }
 
+// 스터디 이모지 업데이트 API 컨트롤러
+async function controlStudyUpdateEmojis(req, res) {
+  /* 쿼리 파라미터 파싱 및 입력 검증 */
+  const studyId = Number.parseInt(req.params.studyId, 10);
+  if (!Number.isFinite(studyId) || studyId <= 0) {
+    const err = new Error('유효하지 않은 스터디 ID입니다.');
+    err.status = 400;
+    err.code = 'INVALID_STUDY_ID';
+    throw err;
+  }
+
+  const { emoji } = req.body;
+  if (typeof emoji !== 'string' || emoji.length === 0) {
+    const err = new Error('이모지가 누락되었습니다.');
+    err.status = 400;
+    err.code = 'EMOJI_REQUIRED';
+    throw err;
+  }
+
+  /* 서비스 호출 */
+  const updatedEmojis = await studyService.serviceStudyUpdateEmojis(
+    studyId,
+    emoji,
+  );
+
+  /* 결과 반환 */
+  res.status(200).json(updatedEmojis);
+}
+
 export default {
   controlGetStudy,
   controlStudyList,
@@ -175,4 +204,6 @@ export default {
   controlStudyUpdate,
   controlStudyDelete,
   controlStudyDetail,
+
+  controlStudyUpdateEmojis,
 };
