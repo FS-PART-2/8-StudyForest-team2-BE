@@ -368,5 +368,163 @@ export async function getWeekHabitsService({ studyId, password, dateStr }) {
     days,
   };
 }
+// 오늘의 습관 이름 수정
+export async function renameTodayHabitService({
+  studyId,
+  password,
+  habitId,
+  newTitle,
+}) {
+  await assertStudyWithPassword({ studyId, password });
+  const { endUtc } = getKSTDayRange(); // 오늘 24:00(KST) 기준
 
+  // 1) 오늘 습관(=기준 습관) 찾기 + 소속 검증
+  const base = await prisma.habit.findFirst({
+    where: {
+      id: habitId,
+      date: { lt: endUtc }, // 오늘(포함) 레코드여야 함
+      habitHistory: { is: { studyId } },
+    },
+    select: { id: true, habit: true, habitHistoryId: true, date: true },
+  });
+  if (!base) {
+    const e = new Error('해당 습관을 찾을 수 없습니다(오늘 기록이 아님).');
+    e.name = 'NotFoundError';
+    throw e;
+  }
+
+  // 2) 충돌 검사
+  const conflicts = await prisma.habit.findMany({
+    where: {
+      habitHistoryId: base.habitHistoryId,
+      habit: newTitle,
+      date: { lt: endUtc },
+    },
+    select: { id: true, date: true },
+  });
+  if (conflicts.length > 0) {
+    const e = new Error('동일 날짜에 같은 이름의 습관이 이미 존재합니다.');
+    e.name = 'ConflictError';
+    e.conflicts = conflicts.map(c => c.date);
+    throw e;
+  }
+
+  // 3) 변경 대상 조회
+  const targets = await prisma.habit.findMany({
+    where: {
+      habitHistoryId: base.habitHistoryId,
+      habit: base.habit,
+      date: { lt: endUtc },
+    },
+    select: { id: true },
+  });
+  if (targets.length === 0) {
+    return { updated: 0, newTitle };
+  }
+
+  // 4) 일괄 변경
+  const updated = await prisma.habit.updateMany({
+    where: { id: { in: targets.map(t => t.id) } },
+    data: { habit: newTitle },
+  });
+
+  return { updated: updated.count, newTitle };
+}
+
+// 오늘의 습관 삭제
+
+export async function deleteTodayHabitService({ studyId, password, habitId }) {
+  await assertStudyWithPassword({ studyId, password });
+  const { startUtc } = getKSTDayRange();
+
+  const base = await prisma.habit.findFirst({
+    where: {
+      id: habitId,
+      habitHistory: { is: { studyId } },
+    },
+    select: { id: true, habit: true, habitHistoryId: true },
+  });
+  if (!base) {
+    const e = new Error('해당 습관을 찾을 수 없습니다.');
+    e.name = 'NotFoundError';
+    throw e;
+  }
+
+  const del = await prisma.habit.deleteMany({
+    where: {
+      habitHistoryId: base.habitHistoryId,
+      habit: base.habit,
+      date: { gte: startUtc }, // 오늘부터(미래 포함) 제거
+    },
+  });
+
+  return { deleted: del.count };
+}
+
+//새로운 습관 추가
+
+export async function addTodayHabitService({ studyId, password, title }) {
+  // 스터디 인증 + 오늘 HabitHistory 보장
+  const study = await assertStudyWithPassword({ studyId, password });
+  const { startUtc, endUtc } = getKSTDayRange();
+
+  // 1) 오늘 해당 스터디의 HabitHistory 가져오기
+  let hh = await prisma.habitHistory.findFirst({
+    where: { studyId: study.id, weekDate: { lte: endUtc } }, // 단순화: 기존 주간 히스토리 재사용
+    orderBy: { weekDate: 'desc' },
+  });
+
+  if (!hh) {
+    // 최초 생성 케이스
+    hh = await prisma.habitHistory.create({
+      data: {
+        studyId: study.id,
+        weekDate: new Date(startUtc), // 오늘 00:00(KST)의 날짜부만 쓰는 셈
+      },
+    });
+  }
+
+  // 2) 오늘 중복 검사 (unique: [habitHistoryId, date, habit])
+  const dup = await prisma.habit.findFirst({
+    where: {
+      habitHistoryId: hh.id,
+      date: { gte: startUtc, lt: endUtc },
+      habit: title.trim(),
+    },
+    select: { id: true },
+  });
+  if (dup) {
+    const e = new Error('오늘 이미 같은 이름의 습관이 존재합니다.');
+    e.name = 'ConflictError';
+    throw e;
+  }
+
+  // 3) 오늘 레코드 생성
+  const created = await prisma.habit.create({
+    data: {
+      habitHistoryId: hh.id,
+      habit: title.trim(),
+      date: new Date(startUtc),
+      isDone: false,
+    },
+    select: {
+      id: true,
+      habit: true,
+      date: true,
+      isDone: true,
+      habitHistoryId: true,
+      createdAt: true,
+    },
+  });
+
+  return {
+    created: {
+      habitId: created.id,
+      title: created.habit,
+      date: created.date,
+      isDone: created.isDone,
+      habitHistoryId: created.habitHistoryId,
+    },
+  };
+}
 export { getKSTDayRange, getKSTWeekRange, assertStudyWithPassword };
