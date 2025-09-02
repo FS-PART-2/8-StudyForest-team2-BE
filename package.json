@@ -10,7 +10,8 @@
     "prepare": "husky",
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "prisma:reset": "prisma migrate reset"
   },
   "lint-staged": {
     "**/*.ts": [
