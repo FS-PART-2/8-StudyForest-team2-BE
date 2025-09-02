@@ -2,7 +2,7 @@
 // 로컬 시드 데이터를 기준으로 테스트 http 요청
 @base = http://localhost:3000/api
 @studyId = 2
-@pwd = hMErO363AqI
+@pwd = test
 @date = 2025-09-02
 
 ### 1) 오늘의 습관 조회 (지금 해본 것)

@@ -193,13 +193,7 @@ async function getWeekHabitsController(req, res, next) {
 async function renameTodayHabitController(req, res) {
   const studyId = parseStudyId(req);
   const password = parsePassword(req);
-  const habitIdStr = req.params.habitId;
-  if (!/^\d+$/.test(habitIdStr)) {
-    return res
-      .status(400)
-      .json({ message: 'habitId는 1 이상의 정수여야 합니다.' });
-  }
-  const habitId = Number.parseInt(habitIdStr, 10);
+  const habitId = parsePositiveParam(req, 'habitId');
 
   const newTitle = String(req.body?.title || '').trim();
   if (!newTitle) {
@@ -230,13 +224,7 @@ async function renameTodayHabitController(req, res) {
 async function deleteTodayHabitController(req, res) {
   const studyId = parseStudyId(req);
   const password = parsePassword(req);
-  const habitIdStr = req.params.habitId;
-  if (!/^\d+$/.test(habitIdStr)) {
-    return res
-      .status(400)
-      .json({ message: 'habitId는 1 이상의 정수여야 합니다.' });
-  }
-  const habitId = Number.parseInt(habitIdStr, 10);
+  const habitId = parsePositiveParam(req, 'habitId');
 
   try {
     const result = await deleteTodayHabitService({
