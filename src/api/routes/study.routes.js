@@ -184,9 +184,15 @@
  *       required: [id, count]
  *       properties:
  *         id:
- *           type: string
- *           description: 이모지 심볼(예: "👍") 또는 식별자 문자열
- *           example: 👍
+ *           description: 이모지 식별자(심볼 또는 정수 ID)
+ *           oneOf:
+ *             - type: string
+ *               minLength: 1
+ *               description: 이모지 심볼(예: "👍")
+ *               example: 👍
+ *             - type: integer
+ *               minimum: 1
+ *               description: 이모지 ID(정수)
  *         count:
  *           type: integer
  *           minimum: 1
