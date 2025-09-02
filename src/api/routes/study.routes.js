@@ -4,85 +4,209 @@
 /**
  * @swagger
  * tags:
- *   name: Studies
- *   description: 스터디 관리 API
+ *   - name: Studies
+ *     description: 스터디 관리 API
  *
  * components:
  *   schemas:
  *     Study:
  *       type: object
  *       properties:
- *         id: { type: integer, example: 101 }
- *         nick: { type: string, example: "kimdy" }
- *         name: { type: string, example: "스터디" }
- *         content: { type: string, example: "Nest.js 스터디" }
- *         img: { type: string, nullable: true, example: "https://..." }
- *         isActive: { type: boolean, example: true }
- *         createdAt: { type: string, format: date-time, example: "2025-09-02T03:00:00.000Z" }
- *         updatedAt: { type: string, format: date-time, example: "2025-09-02T05:22:33.000Z" }
+ *         id:
+ *           type: integer
+ *           example: 101
+ *         nick:
+ *           type: string
+ *           example: kimdy
+ *         name:
+ *           type: string
+ *           example: 스터디
+ *         content:
+ *           type: string
+ *           example: Nest.js 스터디
+ *         img:
+ *           type: string
+ *           nullable: true
+ *           example: https://...
+ *         isActive:
+ *           type: boolean
+ *           example: true
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           example: 2025-09-02T03:00:00.000Z
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *           example: 2025-09-02T05:22:33.000Z
+ *
+ *     StudyDetail:
+ *       allOf:
+ *         - $ref: '#/components/schemas/Study'
+ *         - type: object
+ *           properties:
+ *             pointsSum:
+ *               type: integer
+ *               example: 1234
+ *             _count:
+ *               type: object
+ *               properties:
+ *                 points:
+ *                   type: integer
+ *                   example: 42
+ *                 studyEmojis:
+ *                   type: integer
+ *                   example: 5
+ *                 habitHistories:
+ *                   type: integer
+ *                   example: 10
+ *             studyEmojis:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   emoji:
+ *                     type: string
+ *                     example: 👍
+ *                   count:
+ *                     type: integer
+ *                     example: 13
+ *             habitHistories:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   weekDate:
+ *                     type: string
+ *                     format: date
+ *                   habits:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *
+ *     StudyManageItem:
+ *       allOf:
+ *         - $ref: '#/components/schemas/Study'
+ *         - type: object
+ *           properties:
+ *             _count:
+ *               type: object
+ *               properties:
+ *                 points:
+ *                   type: integer
+ *                 habitHistories:
+ *                   type: integer
+ *                 focuses:
+ *                   type: integer
+ *                 studyEmojis:
+ *                   type: integer
+ *
  *     StudyListResponse:
  *       type: object
  *       properties:
  *         studies:
  *           type: array
- *           items: { $ref: '#/components/schemas/Study' }
+ *           items:
+ *             $ref: '#/components/schemas/Study'
  *         totalCount:
  *           type: integer
  *           example: 57
+ *
  *     StudyCreateInput:
  *       type: object
- *       required: [nick, name, content, password, checkPassword]
+ *       required:
+ *         - nick
+ *         - name
+ *         - content
+ *         - password
+ *         - checkPassword
  *       properties:
- *         nick: { type: string, example: "kimdy" }
- *         name: { type: string, example: "스터디" }
- *         content: { type: string, example: "Nest.js 스터디" }
- *         img: { type: string, nullable: true, example: "https://..." }
- *         password: { type: string, example: "plain-password" }
- *         checkPassword: { type: string, example: "plain-password" }
- *         isActive: { type: boolean, example: true }
+ *         nick:
+ *           type: string
+ *           example: kimdy
+ *         name:
+ *           type: string
+ *           example: 스터디
+ *         content:
+ *           type: string
+ *           example: Nest.js 스터디
+ *         img:
+ *           type: string
+ *           nullable: true
+ *           example: https://...
+ *         password:
+ *           type: string
+ *           example: plain-password
+ *         checkPassword:
+ *           type: string
+ *           example: plain-password
+ *         isActive:
+ *           type: boolean
+ *           example: true
+ *
  *     StudyUpdateInput:
  *       type: object
- *       required: [password]
+ *       required:
+ *         - password
  *       properties:
- *         nick: { type: string, example: "kimdy2" }
- *         name: { type: string, example: "스터디(수정)" }
- *         content: { type: string, example: "수정된 스터디 입니다." }
- *         img: { type: string, nullable: true, example: "https://..." }
- *         isActive: { type: boolean, example: false }
+ *         nick:
+ *           type: string
+ *           example: kimdy2
+ *         name:
+ *           type: string
+ *           example: 스터디(수정)
+ *         content:
+ *           type: string
+ *           example: 수정된 스터디 입니다.
+ *         img:
+ *           type: string
+ *           nullable: true
+ *           example: https://...
+ *         isActive:
+ *           type: boolean
+ *           example: false
  *         password:
  *           type: string
  *           description: 수정 인증용 평문 비밀번호(서버에서 검증)
- *           example: "plain-password"
+ *           example: plain-password
+ *
  *     StudyDeleteInput:
  *       type: object
- *       required: [password]
+ *       required:
+ *         - password
  *       properties:
  *         password:
  *           type: string
  *           description: 삭제 인증용 평문 비밀번호(서버에서 검증)
- *           example: "plain-password"
+ *           example: plain-password
+ *
  *     EmojiUpdateInput:
  *       type: object
- *       required: [emoji]
+ *       required:
+ *         - emoji
  *       properties:
  *         emoji:
  *           type: string
  *           description: '증감할 이모지 문자 (예: "👍" 또는 "heart")'
- *           example: '👍'
+ *           example: 👍
+ *
  *     ErrorResponse:
  *       type: object
  *       properties:
- *         message: { type: string, example: "비밀번호가 누락되었습니다." }
+ *         message:
+ *           type: string
+ *           example: 비밀번호가 누락되었습니다.
  *         code:
  *           type: string
- *           example: "PASSWORD_REQUIRED"
+ *           example: PASSWORD_REQUIRED
  *
  *   parameters:
  *     StudyIdParam:
  *       name: studyId
  *       in: path
  *       required: true
- *       schema: { type: integer }
+ *       schema:
+ *         type: integer
  *       description: 스터디 ID
  */
 
@@ -100,7 +224,7 @@
  *           application/json:
  *             schema:
  *               type: array
- *               items: { $ref: '#/components/schemas/Study' }
+ *               items: { $ref: '#/components/schemas/StudyManageItem' }
  *       500:
  *         description: 서버 에러
  *         content:
@@ -159,7 +283,7 @@
  *         description: 생성 성공
  *         headers:
  *           Location:
- *             description: 생성된 리소스 경로(`/study/{id}`)
+ *             description: 생성된 리소스 경로(`api/studies/{id}`)
  *             schema: { type: string }
  *         content:
  *           application/json:
@@ -186,7 +310,7 @@
  *         description: 상세
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Study' }
+ *             schema: { $ref: '#/components/schemas/StudyDetail' }
  *       400:
  *         description: 잘못된 ID
  *       404:

@@ -38,6 +38,7 @@ app.use('/api', habitRoutes);
 swaggerDocs(app);
 
 // 서버 실행
-app.listen(3000, () => {
-  console.log('Test server is running on port 3000');
+const PORT = Number(process.env.PORT ?? 3000);
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });

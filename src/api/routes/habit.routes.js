@@ -69,45 +69,60 @@
  *       required: true
  *       schema: { type: integer }
  *       description: '스터디 ID'
+ *
+ *   securitySchemes:
+ *     studyPassword:
+ *       type: apiKey
+ *       in: header
+ *       name: X-study-password
+ *       description: '스터디 비밀번호(평문 또는 해시 검증용 입력)'
+ *
  */
 
 /**
  * @swagger
  * /api/habits/today/{studyId}:
  *   get:
- *     tags: [Habits]
- *     summary: '오늘의 습관 목록 조회(KST 00:00~24:00)'
- *     description: '해당 스터디에 대해 KST 기준 오늘 날짜의 습관 목록을 반환합니다. 인증을 위해 스터디 비밀번호가 필요합니다.'
+ *     tags:
+ *       - Habits
+ *     summary: 오늘의 습관 목록 조회 (KST 00:00–24:00)
+ *     description: 해당 스터디에 대해 KST 기준 오늘 날짜의 습관 목록을 반환합니다. 인증을 위해 스터디 비밀번호가 필요합니다.
  *     parameters:
  *       - $ref: '#/components/parameters/StudyIdParam'
- *       - in: query
- *         name: password
- *         required: true
- *         schema: { type: string }
- *         description: '스터디 비밀번호(평문 또는 해시 검증용 입력)'
+ *     security:
+ *       - studyPassword: []
  *     responses:
- *       200:
- *         description: '조회 성공'
+ *       '200':
+ *         description: 조회 성공
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/HabitTodayResponse'
- *       401:
- *         description: '비밀번호 누락 또는 불일치'
+ *       '400':
+ *         description: 잘못된 요청(유효하지 않은 studyId 또는 비밀번호 누락)
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
- *       404:
- *         description: '스터디가 존재하지 않음'
+ *       '401':
+ *         description: 비밀번호 누락 또는 불일치
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
- *       500:
- *         description: '서버 오류'
+ *       '404':
+ *         description: 스터디가 존재하지 않음
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       '500':
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
-
 
 // 라이브러리 정의
 import express from 'express';
