@@ -8,7 +8,21 @@ import getTodayHabitsService, {
   deleteTodayHabitService,
   addTodayHabitService,
 } from '../services/habit.services.js';
-
+function parsePositiveParam(req, name) {
+  const raw = req.params?.[name];
+  if (!/^\d+$/.test(raw || '')) {
+    const e = new Error(`${name}는 1 이상의 정수여야 합니다.`);
+    e.status = 400;
+    throw e;
+  }
+  const n = Number.parseInt(raw, 10);
+  if (n <= 0) {
+    const e = new Error(`${name}는 1 이상의 정수여야 합니다.`);
+    e.status = 400;
+    throw e;
+  }
+  return n;
+}
 function parseStudyId(req) {
   const studyIdStr = req.params.studyId;
   if (!/^\d+$/.test(studyIdStr)) {
