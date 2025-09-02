@@ -1,5 +1,23 @@
+// src/prisma/seed.js
 import { PrismaClient } from '@prisma/client';
 import { faker } from '@faker-js/faker';
+
+import crypto from 'crypto';
+import argon2 from 'argon2';
+
+// 환경 변수 관련 라이브러리
+import path from 'path';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
+
+// 환경 변수 설정
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+if (!process.env.DATABASE_URL) {
+  dotenv.config({ path: path.resolve(__dirname, '../.env') });
+  if (!process.env.DATABASE_URL) {
+    console.error('[ENV] DATABASE_URL 로드 실패');
+  }
+}
 
 const prisma = new PrismaClient();
 
@@ -12,7 +30,7 @@ const pickTwoDistinct = arr => {
   return [a, b];
 };
 
-//  한국인 이름 샘플
+// 한국인 이름 샘플
 const KOREAN_NAMES = [
   '김민준',
   '이서준',
@@ -31,7 +49,7 @@ const KOREAN_NAMES = [
   '권주원',
 ];
 
-//  스터디 주제
+// 스터디 주제
 const STUDY_SUBJECTS = [
   '알고리즘 문제 풀이',
   '영어 단어 암기',
@@ -48,7 +66,7 @@ const STUDY_SUBJECTS = [
   'AI/머신러닝 기초',
 ];
 
-//  스터디 분위기 설명
+// 스터디 분위기 설명
 const STUDY_CONTENTS = [
   '매일 문제 풀이를 공유하고 피드백합니다.',
   '꾸준한 학습 습관을 만들고자 합니다.',
@@ -62,7 +80,7 @@ const STUDY_CONTENTS = [
   '기록과 인증으로 꾸준함을 유지합니다.',
 ];
 
-//  습관
+// 습관
 const HABITS = [
   '물 1리터 마시기',
   '운동 30분 하기',
@@ -71,31 +89,58 @@ const HABITS = [
   '독서 20분',
 ];
 
+// 안전한 랜덤 리프레시 토큰 평문 생성
+function createRefreshTokenPlain(bytes = 48) {
+  return crypto.randomBytes(bytes).toString('hex');
+}
+
 async function seedUsers(n = 5) {
-  // 고유한 한국인 이름 n개 선택 (부족하면 중복 허용)
   const baseNames =
     KOREAN_NAMES.length >= n
       ? faker.helpers.arrayElements(KOREAN_NAMES, n)
       : Array.from({ length: n }).map(() =>
           faker.helpers.arrayElement(KOREAN_NAMES),
         );
-  const users = baseNames.map(name => ({
-    username: name,
-    // NOTE: 개발 시드이므로 평문. 운영 사용 시 해시 필수.
-    password: faker.internet.password({
-      length: faker.number.int({ min: 8, max: 16 }),
+
+  const usersWithSecrets = await Promise.all(
+    baseNames.map(async name => {
+      const passwordPlain = faker.internet.password({
+        length: faker.number.int({ min: 8, max: 16 }),
+      });
+      const passwordHash = await argon2.hash(passwordPlain);
+
+      const refreshTokenPlain = createRefreshTokenPlain();
+      const refreshTokenHash = await argon2.hash(refreshTokenPlain);
+
+      return {
+        data: {
+          username: name,
+          password: passwordHash,
+          email: `${faker.string.alphanumeric({ length: 10, casing: 'lower' })}@example.com`,
+          nick: name,
+          refreshToken: refreshTokenHash,
+        },
+        debug: { username: name, passwordPlain, refreshTokenPlain },
+      };
     }),
-    // ASCII 안전 + 재실행 시 충돌 완화
-    email: `${faker.string.alphanumeric({ length: 10, casing: 'lower' })}@example.com`,
-    nick: name,
-  }));
+  );
+
   await prisma.user.createMany({
-    data: users,
-    skipDuplicates: true, // 유니크 충돌 시 무시
+    data: usersWithSecrets.map(u => u.data),
+    skipDuplicates: true,
   });
 }
 
 async function seedStudies(n = 2) {
+  // const password = await argon2.hash(
+  //   faker.internet.password({
+  //     length: faker.number.int({ min: 8, max: 16 }),
+  //   }),
+  // )
+
+  // 해시 처리된 고정된 비밀번호 생성
+  const password = await argon2.hash('1234');
+
   return Promise.all(
     Array.from({ length: n }).map(() => {
       const leader = faker.helpers.arrayElement(KOREAN_NAMES);
@@ -103,12 +148,10 @@ async function seedStudies(n = 2) {
       return prisma.study.create({
         data: {
           nick: leader,
-          name: `${leader}의 ${subject} 스터디`, // 이름 + 주제
+          name: `${leader}의 ${subject} 스터디`,
           content: faker.helpers.arrayElement(STUDY_CONTENTS),
           img: '/img/default.png',
-          password: faker.internet.password({
-            length: faker.number.int({ min: 8, max: 16 }),
-          }),
+          password: password,
           isActive: randBool(),
         },
       });
