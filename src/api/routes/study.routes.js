@@ -46,13 +46,11 @@ router.get(
   errorMiddleware.asyncHandler(studyController.controlStudyDetail),
 );
 
-// // 예시 API 엔드포인트
-// router.get(
-//   '/example-API',
-//   errorMiddleware.asyncHandler(async (req, res) => {
-//     res.json({ status: 'OK', message: 'This is example API' });
-//   }),
-// );
+// 스터디 이모지 업데이트 API 엔드포인트
+router.post(
+  '/:studyId/emojis',
+  errorMiddleware.asyncHandler(studyController.controlStudyUpdateEmojis),
+)
 
 // 에러 핸들링 미들웨어 적용, 가장 마지막에 위치해야 합니다.
 router.use(errorMiddleware.errorHandler);
