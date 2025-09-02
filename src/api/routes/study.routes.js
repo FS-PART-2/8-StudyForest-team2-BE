@@ -13,6 +13,12 @@ const router = express.Router();
 
 router.use(corsMiddleware); // CORS 미들웨어 적용
 
+// 관리를 위한 전체 스터디 목록 조회 API 엔드포인트
+router.get(
+  '/manage',
+  errorMiddleware.asyncHandler(studyController.controlGetStudy),
+);
+
 // 스터디 목록 조회 API 엔드포인트
 router.get('/', errorMiddleware.asyncHandler(studyController.controlStudyList));
 
@@ -20,6 +26,12 @@ router.get('/', errorMiddleware.asyncHandler(studyController.controlStudyList));
 router.post(
   '/',
   errorMiddleware.asyncHandler(studyController.controlStudyCreate),
+);
+
+// 스터디 수정 API 엔드포인트
+router.patch(
+  '/:studyId',
+  errorMiddleware.asyncHandler(studyController.controlStudyUpdate),
 );
 
 // 스터디 삭제 API 엔드포인트
