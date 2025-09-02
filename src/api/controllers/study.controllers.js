@@ -168,8 +168,8 @@ async function controlStudyDetail(req, res) {
   res.status(200).json(studyDetail);
 }
 
-// 스터디 이모지 업데이트 API 컨트롤러
-async function controlStudyUpdateEmojis(req, res) {
+// 이모지 횟수 증가 API 컨트롤러
+async function controlEmojiIncrement(req, res) {
   /* 쿼리 파라미터 파싱 및 입력 검증 */
   const studyId = Number.parseInt(req.params.studyId, 10);
   if (!Number.isFinite(studyId) || studyId <= 0) {
@@ -179,19 +179,66 @@ async function controlStudyUpdateEmojis(req, res) {
     throw err;
   }
 
-  const { emoji, emojiId } = req.body;
-  if (typeof emoji !== 'string' || emoji.length === 0) {
-    const err = new Error('이모지가 누락되었습니다.');
+  const { id, _, count  } = req.body;
+  const emojiSymbol = id.toString();
+  if (typeof emojiSymbol !== 'string' || emojiSymbol.length === 0) {
+    const err = new Error('이모지 심볼이 누락되었습니다.');
     err.status = 400;
-    err.code = 'EMOJI_REQUIRED';
+    err.code = 'EMOJI_SYMBOL_REQUIRED';
+    throw err;
+  }
+  const emojiCount = Number.parseInt(count, 10);
+  if (!Number.isFinite(emojiCount) || emojiCount < 0) {
+    const err = new Error('유효하지 않은 이모지 횟수입니다.');
+    err.status = 400;
+    err.code = 'INVALID_EMOJI_COUNT';
     throw err;
   }
 
   /* 서비스 호출 */
-  const updatedEmojis = await studyService.serviceStudyUpdateEmojis(
+  const updatedEmojis = await studyService.serviceEmojiIncrement(
     studyId,
-    emojiId,
-    emoji,
+    emojiSymbol,
+    emojiCount,
+  );
+
+  /* 결과 반환 */
+  res.status(200).json(updatedEmojis);
+}
+
+// 이모지 횟수 감소 API 컨트롤러
+async function controlEmojiDecrement(req, res) {
+  /* 쿼리 파라미터 파싱 및 입력 검증 */
+  const studyId = Number.parseInt(req.params.studyId, 10);
+  if (!Number.isFinite(studyId) || studyId <= 0) {
+    const err = new Error('유효하지 않은 스터디 ID입니다.');
+    err.status = 400;
+    err.code = 'INVALID_STUDY_ID';
+    throw err;
+  }
+
+  const { id, _, count  } = req.body;
+  const emojiSymbol = id.toString();
+  if (typeof emojiSymbol !== 'string' || emojiSymbol.length === 0) {
+    const err = new Error('이모지 심볼이 누락되었습니다.');
+    err.status = 400;
+    err.code = 'EMOJI_SYMBOL_REQUIRED';
+    throw err;
+  }
+
+  const emojiCount = Number.parseInt(count, 10);
+  if (!Number.isFinite(emojiCount) || emojiCount < 0) {
+    const err = new Error('유효하지 않은 이모지 횟수입니다.');
+    err.status = 400;
+    err.code = 'INVALID_EMOJI_COUNT';
+    throw err;
+  }
+
+  /* 서비스 호출 */
+  const updatedEmojis = await studyService.serviceEmojiDecrement(
+    studyId,
+    emojiSymbol,
+    emojiCount,
   );
 
   /* 결과 반환 */
@@ -206,5 +253,6 @@ export default {
   controlStudyDelete,
   controlStudyDetail,
 
-  controlStudyUpdateEmojis,
+  controlEmojiIncrement,
+  controlEmojiDecrement
 };

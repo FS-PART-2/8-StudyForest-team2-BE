@@ -448,11 +448,17 @@ router.get(
   errorMiddleware.asyncHandler(studyController.controlStudyDetail),
 );
 
-// 스터디 이모지 업데이트 API 엔드포인트
+// 이모지 횟수 증가 API 엔드포인트
 router.post(
-  '/:studyId/emojis',
-  errorMiddleware.asyncHandler(studyController.controlStudyUpdateEmojis),
-)
+  '/:studyId/emojis/increment',
+  errorMiddleware.asyncHandler(studyController.controlEmojiIncrement),
+);
+
+// 이모지 횟수 감소 API 엔드포인트
+router.post(
+  '/:studyId/emojis/decrement',
+  errorMiddleware.asyncHandler(studyController.controlEmojiDecrement),
+);
 
 // 에러 핸들링 미들웨어 적용, 가장 마지막에 위치해야 합니다.
 router.use(errorMiddleware.errorHandler);
