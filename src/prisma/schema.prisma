@@ -8,13 +8,14 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  username  String   @unique
-  password  String
-  email     String   @unique
-  nick      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+    id           Int      @id @default(autoincrement())
+    username     String   @unique
+    password     String
+    email        String   @unique
+    nick         String
+    refreshToken String?  @unique @db.Text // null 허용 토큰의 길이가 길 수 있어 Text 
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt
 }
 
 model Study {
