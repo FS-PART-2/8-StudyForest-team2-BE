@@ -72,7 +72,7 @@ async function controlStudyCreate(req, res) {
   );
 
   /* 결과 반환 */
-  res.status(201).location(`/study/${studyCreate.id}`).json(studyCreate);
+  res.status(201).location(`/api/studies/${studyCreate.id}`).json(studyCreate);
 }
 
 // 스터디 수정 API 컨트롤러
@@ -254,5 +254,5 @@ export default {
   controlStudyDetail,
 
   controlEmojiIncrement,
-  controlEmojiDecrement
+  controlEmojiDecrement,
 };

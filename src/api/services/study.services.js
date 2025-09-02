@@ -306,6 +306,7 @@ async function serviceEmojiIncrement(studyId, emojiSymbol, emojiCount) {
     // 필요 시 갱신된 레코드 반환
     return prisma.studyEmoji.findUnique({
       where: { studyId_emojiId: { studyId: sid, emojiId: eid } },
+      include: { emoji: { select: { symbol: true } } },
     });
   }
 
