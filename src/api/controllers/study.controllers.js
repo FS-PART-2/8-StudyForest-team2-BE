@@ -227,7 +227,7 @@ async function controlEmojiDecrement(req, res) {
   }
 
   const emojiCount = Number.parseInt(count, 10);
-  if (!Number.isFinite(emojiCount) || emojiCount < 0) {
+  if (!Number.isFinite(emojiCount) || emojiCount < 1) {
     const err = new Error('유효하지 않은 이모지 횟수입니다.');
     err.status = 400;
     err.code = 'INVALID_EMOJI_COUNT';

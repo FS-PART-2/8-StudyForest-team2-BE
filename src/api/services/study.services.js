@@ -287,10 +287,11 @@ async function serviceEmojiFindOrCreate(emojiSymbol) {
   }
 }
 
-// 이모지 횟수 증가 API 서비스 (시그니처/변수명 유지)
+// 이모지 횟수 증가 API 서비스
 async function serviceEmojiIncrement(studyId, emojiSymbol, emojiCount) {
   const sid = Number(studyId);
-  const inc = Math.max(1, Number(emojiCount) || 1);
+  const n = Number(emojiCount);
+  const inc = Number.isFinite(n) ? Math.max(1, Math.floor(n)) : 1;
 
   // 1) symbol 기반으로 Emoji.id 확보
   const eid = await serviceEmojiFindOrCreate(emojiSymbol);
@@ -339,7 +340,8 @@ async function serviceEmojiIncrement(studyId, emojiSymbol, emojiCount) {
 // 이모지 횟수 감소 API 서비스
 async function serviceEmojiDecrement(studyId, emojiSymbol, emojiCount) {
   const sid = Number(studyId);
-  const dec = Math.max(1, Number(emojiCount) || 1);
+  const n = Number(emojiCount);
+  const dec = Number.isFinite(n) ? Math.max(1, Math.floor(n)) : 1;
 
   // 1) symbol로 Emoji "조회만" (없으면 생성하지 않음)
   const symbol = String(emojiSymbol);
