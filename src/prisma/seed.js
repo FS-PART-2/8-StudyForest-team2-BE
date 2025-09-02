@@ -1,8 +1,23 @@
 // src/prisma/seed.js
 import { PrismaClient } from '@prisma/client';
 import { faker } from '@faker-js/faker';
-import * as argon2 from 'argon2';
+
 import crypto from 'crypto';
+import argon2 from 'argon2';
+
+// 환경 변수 관련 라이브러리
+import path from 'path';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
+
+// 환경 변수 설정
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+if (!process.env.DATABASE_URL) {
+  dotenv.config({ path: path.resolve(__dirname, '../.env') });
+  if (!process.env.DATABASE_URL) {
+    console.error('[ENV] DATABASE_URL 로드 실패');
+  }
+}
 
 const prisma = new PrismaClient();
 
@@ -117,6 +132,15 @@ async function seedUsers(n = 5) {
 }
 
 async function seedStudies(n = 2) {
+  // const password = await argon2.hash(
+  //   faker.internet.password({
+  //     length: faker.number.int({ min: 8, max: 16 }),
+  //   }),
+  // )
+
+  // 해시 처리된 고정된 비밀번호 생성
+  const password = await argon2.hash('1234');
+
   return Promise.all(
     Array.from({ length: n }).map(() => {
       const leader = faker.helpers.arrayElement(KOREAN_NAMES);
@@ -127,9 +151,7 @@ async function seedStudies(n = 2) {
           name: `${leader}의 ${subject} 스터디`,
           content: faker.helpers.arrayElement(STUDY_CONTENTS),
           img: '/img/default.png',
-          password: faker.internet.password({
-            length: faker.number.int({ min: 8, max: 16 }),
-          }),
+          password: password,
           isActive: randBool(),
         },
       });

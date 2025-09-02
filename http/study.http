@@ -2,7 +2,29 @@
 
 ###
 
+GET http://localhost:3000/study/manage
+
+###
+
+GET https://eight-studyforest-team2-be.onrender.com/study?offset=0&pointOrder=desc&recentOrder=recent
+
+###
+
 GET http://localhost:3000/study?offset=0&pointOrder=desc&recentOrder=recent
+
+###
+
+POST https://eight-studyforest-team2-be.onrender.com/study
+Content-Type: application/json
+
+{
+    "nick": "테스트",
+    "name": "스터디 생성 테스트",
+    "content": "스터디 생성 테스트 중 입니다.",
+    "img": "https://avatars.githubusercontent.com/in/347564?s=60&v=4",
+    "password": "1234",
+    "isActive": true
+}
 
 ###
 
@@ -15,15 +37,59 @@ Content-Type: application/json
     "content": "스터디 생성 테스트 중 입니다.",
     "img": "https://avatars.githubusercontent.com/in/347564?s=60&v=4",
     "password": "1234",
-    "checkPassword": "1234",
     "isActive": true
 }
 
 ###
 
-DELETE http://localhost:3000/study/16
+PATCH https://eight-studyforest-team2-be.onrender.com/study/30
+Content-Type: application/json
+
+{
+    "nick": "테스트",
+    "name": "스터디 수정 테스트",
+    "content": "스터디 수정 테스트 중 입니다.",
+    "img": "https://avatars.githubusercontent.com/in/347564?s=60&v=4",
+    "password": "1234",
+    "isActive": true
+}
+
+###
+
+PATCH http://localhost:3000/study/30
+Content-Type: application/json
+
+{
+    "nick": "테스트",
+    "name": "스터디 수정 테스트",
+    "content": "스터디 수정 테스트 중 입니다.",
+    "img": "https://avatars.githubusercontent.com/in/347564?s=60&v=4",
+    "password": "1234",
+    "isActive": true
+}
+
+###
+
+DELETE https://eight-studyforest-team2-be.onrender.com/study/6
 Content-Type: application/json
 
 {
   "password": "1234"
 }
+
+###
+
+DELETE http://localhost:3000/study/25
+Content-Type: application/json
+
+{
+  "password": "1234"
+}
+
+###
+
+GET https://eight-studyforest-team2-be.onrender.com/study/1
+
+###
+
+GET http://localhost:3000/study/22
