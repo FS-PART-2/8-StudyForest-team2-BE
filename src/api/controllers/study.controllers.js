@@ -179,7 +179,7 @@ async function controlStudyUpdateEmojis(req, res) {
     throw err;
   }
 
-  const { emoji } = req.body;
+  const { emoji, emojiId } = req.body;
   if (typeof emoji !== 'string' || emoji.length === 0) {
     const err = new Error('이모지가 누락되었습니다.');
     err.status = 400;
@@ -190,6 +190,7 @@ async function controlStudyUpdateEmojis(req, res) {
   /* 서비스 호출 */
   const updatedEmojis = await studyService.serviceStudyUpdateEmojis(
     studyId,
+    emojiId,
     emoji,
   );
 
