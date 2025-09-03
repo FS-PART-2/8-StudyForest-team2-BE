@@ -13,6 +13,7 @@ import express from 'express';
 import morgan from 'morgan';
 import studyRoutes from '../src/api/routes/study.routes.js';
 import habitRoutes from '../src/api/routes/habit.routes.js';
+import userRoutes from '../src/api/routes/user.routes.js';
 import { swaggerDocs } from './common/swagger.js';
 // 환경 변수 설정
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -33,6 +34,7 @@ app.use(morgan('combined'));
 // API 라우트 설정
 app.use('/api/studies', studyRoutes);
 app.use('/api', habitRoutes);
+app.use('/api/users', userRoutes);
 
 // Swagger 문서
 swaggerDocs(app);

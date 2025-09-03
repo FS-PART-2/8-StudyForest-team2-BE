@@ -1,40 +1,49 @@
-// Description: 사용자 관련 서비스 - 회원가입, 로그인, 로그아웃, 사용자 조회
+import { PrismaClient } from '@prisma/client';
+import argon2 from 'argon2';
 
-// // src/api/services/user.services.js
-// const bcrypt = require('bcrypt');
-// const jwt = require('jsonwebtoken');
-// const { PrismaClient } = require('@prisma/client');
-// const { createError } = require('../../common/error.js');
-//
-// const prisma = new PrismaClient();
-//
-// const userService = {
-//   // 사용자 생성
-//   async createUser({ email, password, name }) {
-//     const existingUser = await prisma.user.findUnique({ where: { email } });
-//     if (existingUser) {
-//       throw createError(409, '이미 존재하는 이메일입니다.');
-//     }
-//
-//     const hashedPassword = await bcrypt.hash(password, 10);
-//
-//     const user = await prisma.user.create({
-//       data: {
-//         email,
-//         password: hashedPassword,
-//         name,
-//       },
-//       select: {
-//         id: true,
-//         email: true,
-//         name: true,
-//         createdAt: true,
-//       },
-//     });
-//
-//     return user;
-//   },
-//
+const prisma = new PrismaClient();
+
+export async function createUserService({ email, password, username, nick }) {
+  // 중복 이메일/username 체크
+  const [emailExists, usernameExists] = await Promise.all([
+    prisma.user.findUnique({ where: { email } }),
+    prisma.user.findUnique({ where: { username } }),
+  ]);
+
+  if (emailExists) {
+    const err = new Error('이미 사용 중인 이메일입니다.');
+    err.status = 409;
+    err.code = 'DUPLICATE_EMAIL';
+    throw err;
+  }
+  if (usernameExists) {
+    const err = new Error('이미 사용 중인 사용자명(username)입니다.');
+    err.status = 409;
+    err.code = 'DUPLICATE_USERNAME';
+    throw err;
+  }
+
+  const hashed = await argon2.hash(password);
+
+  const user = await prisma.user.create({
+    data: {
+      email,
+      password: hashed,
+      username,
+      nick,
+    },
+    select: {
+      id: true,
+      email: true,
+      username: true,
+      nick: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  return user;
+}
 //   // 사용자 로그인
 //   async loginUser({ email, password }) {
 //     const user = await prisma.user.findUnique({ where: { email } });

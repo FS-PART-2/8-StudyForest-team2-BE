@@ -1,34 +1,30 @@
-// Description: 사용자 컨트롤러 - 회원가입, 로그인, 로그아웃, 프로필 조회
+import { validationResult } from 'express-validator';
+import { createUserService } from '../services/user.services.js';
 
-// // src/api/controllers/user.controllers.js
-// const userService = require('../services/user.services');
-// const { validationResult } = require('express-validator');
-// const { createError } = require('../../common/error');
-//
-// const userController = {
-//   // 회원가입
-//   async register(req, res, next) {
-//     try {
-//       const errors = validationResult(req);
-//       if (!errors.isEmpty()) {
-//         return next(
-//           createError(400, '입력 데이터가 유효하지 않습니다.', errors.array()),
-//         );
-//       }
-//
-//       const { email, password, name } = req.body;
-//       const user = await userService.createUser({ email, password, name });
-//
-//       res.status(201).json({
-//         success: true,
-//         message: '회원가입이 완료되었습니다.',
-//         data: { userId: user.id, email: user.email, name: user.name },
-//       });
-//     } catch (error) {
-//       next(error);
-//     }
-//   },
-//
+export async function registerController(req, res, next) {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      const err = new Error('입력 데이터가 유효하지 않습니다.');
+      err.status = 400;
+      err.code = 'VALIDATION_ERROR';
+      err.details = errors.array();
+      throw err;
+    }
+
+    const { email, password, username, nick } = req.body;
+
+    const user = await createUserService({ email, password, username, nick });
+
+    res.status(201).json({
+      success: true,
+      message: '회원가입이 완료되었습니다.',
+      data: user,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
 //   // 로그인
 //   async login(req, res, next) {
 //     try {
@@ -82,5 +78,3 @@
 //     }
 //   },
 // };
-//
-// module.exports = userController;
