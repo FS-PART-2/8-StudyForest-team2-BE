@@ -264,14 +264,14 @@ async function controlSetHabitHistory(req, res) {
     err.code = 'INVALID_STUDY_ID';
     throw err;
   }
-  const habitName = typeof req.query.habitName === 'string' ? req.query.habitName.trim() : '';
+  const habitName = typeof req.query.habitName === 'string' ? req.query.habitName.trim() : undefined;
   if (typeof habitName !== 'string' || habitName.length === 0) {
     const err = new Error('습관 이름이 누락되었습니다.');
     err.status = 400;
     err.code = 'HABIT_NAME_REQUIRED';
     throw err;
   }
-  const date = typeof req.query.date === 'string' ? req.query.date.trim() : '';
+  const date = typeof req.query.date === 'string' ? req.query.date.trim() : undefined;
   if (typeof date !== 'string' || date.length === 0) {
     const err = new Error('요일이 누락되었습니다.');
     err.status = 400;

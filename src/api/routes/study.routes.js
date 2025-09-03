@@ -272,6 +272,9 @@
  *               description: 이모지 유니코드 코드포인트(16진수)
  *               pattern: '^[0-9a-fA-F]{4,8}$'
  *               example: 1f603
+ *             - type: integer
+ *               description: 이모지의 내부 정수 ID
+ *               example: 11
  *         count:
  *           type: integer
  *           minimum: 1
@@ -639,6 +642,33 @@
  *         description: 대상 스터디 없음
  *       500:
  *         description: 서버 에러
+ */
+
+/**
+ * @swagger
+ * /api/studies/{studyId}/habit-history:
+ *   post:
+ *     tags: [Studies]
+ *     summary: 주차별 습관 요약(요일 플래그) 갱신
+ *     parameters:
+ *       - $ref: '#/components/parameters/StudyIdParam'
+ *       - in: query
+ *         name: habitName
+ *         required: true
+ *         schema: { type: string }
+ *       - in: query
+ *         name: date
+ *         required: true
+ *         schema: { type: string, enum: [mon, tue, wed, thu, fri, sat, sun] }
+ *       - in: header
+ *         name: x-study-password
+ *         required: false
+ *         schema: { type: string }
+ *     responses:
+ *       200: { description: 갱신된 HabitHistory, content: { application/json: { schema: { $ref: '#/components/schemas/StudyDetail' } } } }
+ *       400: { description: 유효성 오류 }
+ *       401: { description: 인증 실패 }
+ *       404: { description: 대상 없음 }
  */
 
 import express from 'express';
