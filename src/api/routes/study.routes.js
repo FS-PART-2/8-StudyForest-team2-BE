@@ -263,7 +263,7 @@
  *
  *     EmojiCountInput:
  *       type: object
- *       required: [id, emoji, count]
+ *       required: [id, count]
  *       properties:
  *         id:
  *           description: 이모지 식별자(심볼 또는 정수 ID)
@@ -655,7 +655,11 @@
  *       - in: query
  *         name: habitName
  *         required: true
- *         schema: { type: string }
+ *         schema:
+ *           type: string
+ *           minLength: 1
+ *           pattern: '^\\S(.*\\S)?$'
+ *           description: 앞뒤 공백 제거 후 비어 있지 않아야 함
  *       - in: query
  *         name: date
  *         required: true
