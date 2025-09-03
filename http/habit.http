@@ -9,8 +9,8 @@
 GET {{base}}/habits/today/{{studyId}}
 x-study-password: {{pwd}}
 
-### 2) 오늘의 습관 생성 (여기서 실제 생성됨)
-POST {{base}}/habits/today/{{studyId}}
+### 2) 오늘의 습관 일괄 생성 (여기서 실제 생성됨)
+POST {{base}}/habits/today/{{studyId}}/bulk
 Content-Type: application/json
 x-study-password: {{pwd}}
 
@@ -25,3 +25,22 @@ x-study-password: {{pwd}}
 ### 4) 주간 기록 조회 (해당 날짜가 속한 주)
 GET {{base}}/habits/week/{{studyId}}?date={{date}}
 x-study-password: {{pwd}}
+
+### 5) 오늘의 습관 단일 생성
+POST {{base}}/habits/today/{{studyId}}
+Content-Type: application/json
+x-study-password: {{pwd}}
+
+{
+  "title": "단어 50개"
+}
+
+### 6) 오늘의 습관 이름 변경 (오늘 포함 과거 전체 반영)
+@renameHabitId = 15
+PATCH {{base}}/habits/today/{{studyId}}/{{renameHabitId}}
+Content-Type: application/json
+x-study-password: {{pwd}}
+
+{
+  "title": "단어 100개"
+}

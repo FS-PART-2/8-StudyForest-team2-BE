@@ -8,26 +8,36 @@
  *     description: 스터디 관리 API
  *
  * components:
+ *   parameters:
+ *     StudyIdParam:
+ *       name: studyId
+ *       in: path
+ *       required: true
+ *       schema: { type: integer, minimum: 1 }
+ *       description: 스터디 ID
+ *
  *   schemas:
- *     Study:
+ *     ErrorResponse:
  *       type: object
  *       properties:
- *         id:
- *           type: integer
- *           example: 101
- *         nick:
+ *         message: { type: string, example: 비밀번호가 누락되었습니다. }
+ *         code:
  *           type: string
- *           example: kimdy
- *         name:
- *           type: string
- *           example: 스터디
- *         content:
- *           type: string
- *           example: Nest.js 스터디
+ *           description: 애플리케이션 정의 오류 코드
+ *           example: PASSWORD_REQUIRED
+ *
+ *     Study:
+ *       type: object
+ *       description: 스터디 기본 객체
+ *       properties:
+ *         id: { type: integer, example: 101 }
+ *         nick: { type: string, example: kimdy }
+ *         name: { type: string, example: 알고리즘 스터디 }
+ *         content: { type: string, example: 매주 토요일 10시 온라인 진행 }
  *         img:
  *           type: string
  *           nullable: true
- *           example: https://...
+ *           example: https://example.com/banner.png
  *         isActive:
  *           type: boolean
  *           example: true
@@ -38,51 +48,7 @@
  *         updatedAt:
  *           type: string
  *           format: date-time
- *           example: 2025-09-02T05:22:33.000Z
- *
- *     StudyDetail:
- *       allOf:
- *         - $ref: '#/components/schemas/Study'
- *         - type: object
- *           properties:
- *             pointsSum:
- *               type: integer
- *               example: 1234
- *             _count:
- *               type: object
- *               properties:
- *                 points:
- *                   type: integer
- *                   example: 42
- *                 studyEmojis:
- *                   type: integer
- *                   example: 5
- *                 habitHistories:
- *                   type: integer
- *                   example: 10
- *             studyEmojis:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   emoji:
- *                     type: string
- *                     example: 👍
- *                   count:
- *                     type: integer
- *                     example: 13
- *             habitHistories:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   weekDate:
- *                     type: string
- *                     format: date
- *                   habits:
- *                     type: array
- *                     items:
- *                       type: object
+ *           example: 2025-09-02T03:00:00.000Z
  *
  *     StudyManageItem:
  *       allOf:
@@ -92,122 +58,182 @@
  *             _count:
  *               type: object
  *               properties:
- *                 points:
- *                   type: integer
- *                 habitHistories:
- *                   type: integer
- *                 focuses:
- *                   type: integer
- *                 studyEmojis:
- *                   type: integer
+ *                 points: { type: integer, example: 12 }
+ *                 habitHistories: { type: integer, example: 4 }
+ *                 focuses: { type: integer, example: 7 }
+ *                 studyEmojis: { type: integer, example: 3 }
+ *
+ *     StudyListItem:
+ *       allOf:
+ *         - $ref: '#/components/schemas/Study'
+ *         - type: object
+ *           properties:
+ *             points:
+ *               type: array
+ *               description: 포인트 엔티티 배열(필드 구조는 내부 구현을 따름)
+ *               items: { type: object, additionalProperties: true }
+ *             studyEmojis:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   count: { type: integer, example: 13 }
+ *                   emoji:
+ *                     type: object
+ *                     properties:
+ *                       symbol: { type: string, example: 👍 }
+ *             habitHistories:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   weekDate:
+ *                     type: string
+ *                     format: date
+ *                     example: 2025-08-31
+ *                   habits:
+ *                     type: array
+ *                     items: { type: object, additionalProperties: true }
+ *             focuses:
+ *               type: array
+ *               items: { type: object, additionalProperties: true }
  *
  *     StudyListResponse:
  *       type: object
  *       properties:
+ *         totalCount: { type: integer, example: 127 }
  *         studies:
  *           type: array
- *           items:
- *             $ref: '#/components/schemas/Study'
- *         totalCount:
- *           type: integer
- *           example: 57
+ *           items: { $ref: '#/components/schemas/StudyListItem' }
+ *
+ *     StudyDetail:
+ *       allOf:
+ *         - $ref: '#/components/schemas/Study'
+ *         - type: object
+ *           properties:
+ *             studyEmojis:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   count: { type: integer, example: 13 }
+ *                   emoji:
+ *                     type: object
+ *                     properties:
+ *                       symbol: { type: string, example: 👍 }
+ *             habitHistories:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   weekDate:
+ *                     type: string
+ *                     format: date
+ *                     example: 2025-08-31
+ *                   habits:
+ *                     type: array
+ *                     items: { type: object, additionalProperties: true }
+ *             _count:
+ *               type: object
+ *               properties:
+ *                 points: { type: integer, example: 12 }
+ *                 studyEmojis: { type: integer, example: 3 }
+ *                 habitHistories: { type: integer, example: 4 }
+ *             pointsSum:
+ *               type: integer
+ *               description: 포인트 합계
+ *               example: 42
  *
  *     StudyCreateInput:
  *       type: object
- *       required:
- *         - nick
- *         - name
- *         - content
- *         - password
- *         - checkPassword
+ *       required: [nick, name, content, password, checkPassword]
  *       properties:
- *         nick:
- *           type: string
- *           example: kimdy
- *         name:
- *           type: string
- *           example: 스터디
- *         content:
- *           type: string
- *           example: Nest.js 스터디
+ *         nick: { type: string, example: kimdy }
+ *         name: { type: string, example: 알고리즘 스터디 }
+ *         content: { type: string, example: 매주 토요일 10시 온라인 진행 }
  *         img:
  *           type: string
  *           nullable: true
- *           example: https://...
- *         password:
- *           type: string
- *           example: plain-password
- *         checkPassword:
- *           type: string
- *           example: plain-password
- *         isActive:
- *           type: boolean
- *           example: true
+ *           example: https://example.com/banner.png
+ *         password: { type: string, example: 'p@ssW0rd!' }
+ *         checkPassword: { type: string, example: 'p@ssW0rd!' }
+ *         isActive: { type: boolean, example: true }
  *
  *     StudyUpdateInput:
  *       type: object
- *       required:
- *         - password
+ *       required: [password]
  *       properties:
- *         nick:
- *           type: string
- *           example: kimdy2
- *         name:
- *           type: string
- *           example: 스터디(수정)
- *         content:
- *           type: string
- *           example: 수정된 스터디 입니다.
+ *         nick: { type: string, example: kimdy2 }
+ *         name: { type: string, example: 스터디(수정) }
+ *         content: { type: string, example: 수정된 스터디 입니다. }
  *         img:
  *           type: string
  *           nullable: true
- *           example: https://...
- *         isActive:
- *           type: boolean
- *           example: false
- *         password:
- *           type: string
- *           description: 수정 인증용 평문 비밀번호(서버에서 검증)
- *           example: plain-password
+ *           example: https://example.com/banner2.png
+ *         password: { type: string, example: 'p@ssW0rd!' }
+ *         isActive: { type: boolean, example: true }
  *
  *     StudyDeleteInput:
  *       type: object
- *       required:
- *         - password
+ *       required: [password]
  *       properties:
- *         password:
- *           type: string
- *           description: 삭제 인증용 평문 비밀번호(서버에서 검증)
- *           example: plain-password
+ *         password: { type: string, example: 'p@ssW0rd!' }
  *
- *     EmojiUpdateInput:
+ *     EmojiCountInput:
  *       type: object
- *       required:
- *         - emoji
+ *       required: [id, count]
  *       properties:
+ *         id:
+ *           description: 이모지 식별자(심볼 또는 정수 ID)
+ *           oneOf:
+ *             - type: string
+ *               minLength: 1
+ *               description: 이모지 심볼(예 "👍")
+ *               example: 👍
+ *             - type: integer
+ *               minimum: 1
+ *               description: 이모지 ID(정수)
+ *         count:
+ *           type: integer
+ *           minimum: 1
+ *           description: 증감 수량(정수, 최소 1)
+ *           example: 3
+ *
+ *     StudyEmoji:
+ *       type: object
+ *       properties:
+ *         studyId: { type: integer, example: 101 }
+ *         emojiId: { type: integer, example: 12 }
+ *         count: { type: integer, example: 13 }
  *         emoji:
- *           type: string
- *           description: '증감할 이모지 문자 (예: "👍" 또는 "heart")'
- *           example: 👍
+ *           type: object
+ *           properties:
+ *             symbol: { type: string, example: 👍 }
  *
- *     ErrorResponse:
+ *     EmojiUpdated:
+ *       allOf:
+ *         - $ref: '#/components/schemas/StudyEmoji'
+ *
+ *     EmojiDeleted:
  *       type: object
  *       properties:
- *         message:
+ *         deleted: { type: boolean, example: true }
+ *         studyId: { type: integer, example: 101 }
+ *         emojiId:
+ *           type: integer
+ *           nullable: true
+ *           example: 12
+ *         count: { type: integer, example: 0 }
+ *         reason:
  *           type: string
- *           example: 비밀번호가 누락되었습니다.
- *         code:
- *           type: string
- *           example: PASSWORD_REQUIRED
+ *           nullable: true
+ *           description: 'not-exists | emoji-not-found | race 등'
+ *           example: 'not-exists'
  *
- *   parameters:
- *     StudyIdParam:
- *       name: studyId
- *       in: path
- *       required: true
- *       schema:
- *         type: integer
- *       description: 스터디 ID
+ *     EmojiActionResult:
+ *       oneOf:
+ *         - $ref: '#/components/schemas/EmojiUpdated'
+ *         - $ref: '#/components/schemas/EmojiDeleted'
  */
 
 /**
@@ -250,7 +276,7 @@
  *       - in: query
  *         name: keyword
  *         schema: { type: string }
- *         description: 이름 부분 일치(대소문자 무시)
+ *         example: 알고리즘
  *       - in: query
  *         name: pointOrder
  *         schema: { type: string, enum: [asc, desc] }
@@ -259,17 +285,26 @@
  *         name: recentOrder
  *         schema: { type: string, enum: [recent, old] }
  *         example: recent
+ *       - in: query
+ *         name: active
+ *         schema: { type: boolean }
+ *         example: true
+ *     description: |
+ *       - offset: (선택) 건너뛸 레코드 수(기본값 0)
+ *       - limit: (선택) 최대 조회 건수(기본값 6, 최대 50)
+ *       - keyword: (선택) 스터디 이름/닉네임/내용 검색 키워드(부분 일치)
+ *       - pointOrder: (선택) 포인트 합계 기준 정렬(asc/desc, 기본값 desc)
+ *       - recentOrder: (선택) 생성일 기준 정렬(recent/old, 기본값 recent)
+ *       - active: (선택) 활성화 상태 필터(true/false, 미지정 시 전체)
  *     responses:
  *       200:
- *         description: 목록 및 총계
+ *         description: 페이징 목록
  *         content:
  *           application/json:
  *             schema: { $ref: '#/components/schemas/StudyListResponse' }
  *       500:
  *         description: 서버 에러
- *         content:
- *           application/json:
- *             schema: { $ref: '#/components/schemas/ErrorResponse' }
+ *
  *   post:
  *     tags: [Studies]
  *     summary: 스터디 생성
@@ -283,7 +318,7 @@
  *         description: 생성 성공
  *         headers:
  *           Location:
- *             description: 생성된 리소스 경로(`api/studies/{id}`)
+ *             description: 생성된 리소스 경로(`/api/studies/{id}`)
  *             schema: { type: string }
  *         content:
  *           application/json:
@@ -315,9 +350,9 @@
  *         description: 잘못된 ID
  *       404:
  *         description: 존재하지 않는 스터디
- *         content:
- *           application/json:
- *             schema: { $ref: '#/components/schemas/ErrorResponse' }
+ *       500:
+ *         description: 서버 에러
+ *
  *   patch:
  *     tags: [Studies]
  *     summary: 스터디 수정
@@ -335,13 +370,14 @@
  *           application/json:
  *             schema: { $ref: '#/components/schemas/Study' }
  *       400:
- *         description: 유효성 오류/비밀번호 누락
+ *         description: 유효성 오류
  *       403:
- *         description: 비밀번호 불일치
+ *         description: 비밀번호 불일치 등
  *       404:
  *         description: 존재하지 않는 스터디
  *       500:
  *         description: 서버 에러
+ *
  *   delete:
  *     tags: [Studies]
  *     summary: 스터디 삭제
@@ -367,39 +403,64 @@
 
 /**
  * @swagger
- *  /api/studies/{studyId}/emojis:
+ * /api/studies/{studyId}/emojis/increment:
  *   post:
  *     tags: [Studies]
- *     summary: '스터디 이모지 업데이트'
- *     description: '본문의 emoji 값을 사용해 해당 이모지 카운트를 업데이트합니다.'
+ *     summary: 스터디 이모지 카운트 증가
+ *     description: 요청 본문의 id(이모지 심볼/식별자)와 count(증가 수량)를 사용합니다.
  *     parameters:
  *       - $ref: '#/components/parameters/StudyIdParam'
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
- *           schema: { $ref: '#/components/schemas/EmojiUpdateInput' }
+ *           schema: { $ref: '#/components/schemas/EmojiCountInput' }
  *     responses:
  *       200:
- *         description: '업데이트 성공'
+ *         description: 증가 후 최신 레코드
  *         content:
  *           application/json:
- *             schema:
- *               type: object
- *               example:
- *                 studyId: 101
- *                 emojis:
- *                   - emoji: '👍'
- *                     count: 13
+ *             schema: { $ref: '#/components/schemas/EmojiUpdated' }
  *       400:
- *         description: '유효성 오류(emoji 누락 등)'
+ *         description: 유효성 오류(id/count 누락/형식 불일치)
  *         content:
  *           application/json:
  *             schema: { $ref: '#/components/schemas/ErrorResponse' }
  *       404:
- *         description: '대상 스터디 없음'
+ *         description: 대상 스터디 없음
  *       500:
- *         description: '서버 에러'
+ *         description: 서버 에러
+ */
+
+/**
+ * @swagger
+ * /api/studies/{studyId}/emojis/decrement:
+ *   post:
+ *     tags: [Studies]
+ *     summary: 스터디 이모지 카운트 감소/삭제
+ *     description: 현재 카운트보다 많이 감소 요청 시 레코드가 삭제될 수 있습니다.
+ *     parameters:
+ *       - $ref: '#/components/parameters/StudyIdParam'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema: { $ref: '#/components/schemas/EmojiCountInput' }
+ *     responses:
+ *       200:
+ *         description: 감소 결과(감소 또는 삭제)
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/EmojiActionResult' }
+ *       400:
+ *         description: 유효성 오류(id/count 누락/형식 불일치)
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/ErrorResponse' }
+ *       404:
+ *         description: 대상 스터디 없음
+ *       500:
+ *         description: 서버 에러
  */
 
 import express from 'express';
@@ -448,11 +509,17 @@ router.get(
   errorMiddleware.asyncHandler(studyController.controlStudyDetail),
 );
 
-// 스터디 이모지 업데이트 API 엔드포인트
+// 이모지 횟수 증가 API 엔드포인트
 router.post(
-  '/:studyId/emojis',
-  errorMiddleware.asyncHandler(studyController.controlStudyUpdateEmojis),
-)
+  '/:studyId/emojis/increment',
+  errorMiddleware.asyncHandler(studyController.controlEmojiIncrement),
+);
+
+// 이모지 횟수 감소 API 엔드포인트
+router.post(
+  '/:studyId/emojis/decrement',
+  errorMiddleware.asyncHandler(studyController.controlEmojiDecrement),
+);
 
 // 에러 핸들링 미들웨어 적용, 가장 마지막에 위치해야 합니다.
 router.use(errorMiddleware.errorHandler);
