@@ -452,7 +452,15 @@ async function serviceSetHabitHistory(studyId, habitName, date){
 
   const result = await prisma.habitHistory.update({
     where: { studyId_habitId: { studyId: sid, habitId: hid } },
-    data: { done },
+    data: {
+      monDone: done.mon,
+      tueDone: done.tue,
+      wedDone: done.wed,
+      thuDone: done.thu,
+      friDone: done.fri,
+      satDone: done.sat,
+      sunDone: done.sun,
+    },
     include: { habits: true },
   });
 

@@ -116,7 +116,7 @@
  *               items:
  *                 type: object
  *                 properties:
- *                   count: { type: integer, example: 13 }
+ *                   count: { type: integer, minimum: 0, example: 8 }
  *                   emoji:
  *                     type: object
  *                     properties:
@@ -187,17 +187,14 @@
  *           description: 이모지 식별자(심볼 또는 정수 ID)
  *           oneOf:
  *             - type: string
- *               minLength: 1
- *               description: 이모지 심볼(예 "👍")
- *               example: 👍
- *             - type: integer
- *               minimum: 1
- *               description: 이모지 ID(정수)
+ *               description: 이모지 유니코드 코드포인트(16진수)
+ *               pattern: '^[0-9a-fA-F]{4,8}$'
+ *               example: 1f603
  *         count:
  *           type: integer
  *           minimum: 1
- *           description: 증감 수량(정수, 최소 1)
- *           example: 3
+ *           description: 증가/감소 수량(양의 정수)
+ *           example: 1
  *
  *     StudyEmoji:
  *       type: object
@@ -522,7 +519,7 @@ router.post(
 );
 
 // 습관 기록표 API 엔드포인트
-router.get(
+router.post(
   '/:studyId/habit-history',
   errorMiddleware.asyncHandler(studyController.controlSetHabitHistory),
 );
