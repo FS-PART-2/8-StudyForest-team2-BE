@@ -396,20 +396,11 @@ async function serviceEmojiDecrement(studyId, emojiSymbol, emojiCount) {
 }
 
 async function serviceSetHabitHistory(studyId, habitName, date){
-  const sid = Number(studyId);
   const habitId = await prisma.habit.findMany({
     where: { habit: habitName },
-    select: { id: true },
+    select: { habitHistoryId: true },
   });
-  const hid = habitId[0].id;
-  // 습관 이름이 존재하지 않는 경우 404 에러 처리
-
-  // if (!hid) {
-  //   const error = new Error('존재하지 않는 습관 이름입니다.');
-  //   error.status = 404;
-  //   error.code = 'HABIT_NOT_FOUND';
-  //   throw error;
-  // }
+  const hid = habitId[0].habitHistoryId;
 
   let done = {
     mon: false,
@@ -451,8 +442,16 @@ async function serviceSetHabitHistory(studyId, habitName, date){
   }
 
   const result = await prisma.habitHistory.update({
-    where: { studyId_habitId: { studyId: sid, habitId: hid } },
-    data: { done },
+    where: { id: hid },
+    data: {
+      monDone: done.mon,
+      tueDone: done.tue,
+      wedDone: done.wed,
+      thuDone: done.thu,
+      friDone: done.fri,
+      satDone: done.sat,
+      sunDone: done.sun,
+    },
     include: { habits: true },
   });
 

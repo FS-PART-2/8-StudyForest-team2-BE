@@ -263,18 +263,18 @@
  *
  *     EmojiCountInput:
  *       type: object
- *       required: [id, emoji, count]
+ *       required: [id, count]
  *       properties:
  *         id:
- *           type: string
- *           description: 이모지 유니코드 코드포인트(16진수)
- *           pattern: '^[0-9a-fA-F]{4,8}$'
- *           example: 1f603
- *         emoji:
- *           type: string
- *           description: 실제 이모지 문자
- *           minLength: 1
- *           example: 😃
+ *           description: 이모지 식별자(심볼 또는 정수 ID)
+ *           oneOf:
+ *             - type: string
+ *               description: 이모지 유니코드 코드포인트(16진수)
+ *               pattern: '^[0-9a-fA-F]{4,8}$'
+ *               example: 1f603
+ *             - type: integer
+ *               description: 이모지의 내부 정수 ID
+ *               example: 11
  *         count:
  *           type: integer
  *           minimum: 1
@@ -644,6 +644,37 @@
  *         description: 서버 에러
  */
 
+/**
+ * @swagger
+ * /api/studies/{studyId}/habit-history:
+ *   post:
+ *     tags: [Studies]
+ *     summary: 주차별 습관 요약(요일 플래그) 갱신
+ *     parameters:
+ *       - $ref: '#/components/parameters/StudyIdParam'
+ *       - in: query
+ *         name: habitName
+ *         required: true
+ *         schema:
+ *           type: string
+ *           minLength: 1
+ *           pattern: '^\\S(.*\\S)?$'
+ *           description: 앞뒤 공백 제거 후 비어 있지 않아야 함
+ *       - in: query
+ *         name: date
+ *         required: true
+ *         schema: { type: string, enum: [mon, tue, wed, thu, fri, sat, sun] }
+ *       - in: header
+ *         name: x-study-password
+ *         required: false
+ *         schema: { type: string }
+ *     responses:
+ *       200: { description: 갱신된 HabitHistory, content: { application/json: { schema: { $ref: '#/components/schemas/StudyDetail' } } } }
+ *       400: { description: 유효성 오류 }
+ *       401: { description: 인증 실패 }
+ *       404: { description: 대상 없음 }
+ */
+
 import express from 'express';
 
 // 미들웨어 정의
@@ -703,7 +734,7 @@ router.post(
 );
 
 // 습관 기록표 API 엔드포인트
-router.get(
+router.post(
   '/:studyId/habit-history',
   errorMiddleware.asyncHandler(studyController.controlSetHabitHistory),
 );

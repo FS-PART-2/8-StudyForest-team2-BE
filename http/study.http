@@ -118,4 +118,4 @@ Content-Type: application/json
 
 ###
 
-http://localhost:3000/api/studies/30/habit-history?habitName="1"&date="mon"
+POST http://localhost:3000/api/studies/30/habit-history?habitName=1&date=mon
