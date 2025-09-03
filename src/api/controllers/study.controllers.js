@@ -33,6 +33,7 @@ async function controlStudyList(req, res) {
       : 'recent';
   const pointOrder = pointOrderRaw === 'desc' ? 'desc' : 'asc';
   const recentOrder = recentOrderRaw === 'old' ? 'old' : 'recent';
+  const isActive = req.query.isActive;
 
   /* 서비스 호출 */
   const studyList = await studyService.serviceStudyList({
@@ -41,6 +42,7 @@ async function controlStudyList(req, res) {
     keyword,
     pointOrder,
     recentOrder,
+    isActive,
   });
 
   /* 결과 반환 */

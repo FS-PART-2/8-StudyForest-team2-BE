@@ -188,7 +188,7 @@
  *           oneOf:
  *             - type: string
  *               minLength: 1
- *               description: 이모지 심볼(예: "👍")
+ *               description: 이모지 심볼(예 "👍")
  *               example: 👍
  *             - type: integer
  *               minimum: 1
