@@ -115,3 +115,7 @@ Content-Type: application/json
     "emoji": "😃",
     "count": 1
 }
+
+###
+
+http://localhost:3000/api/studies/30/habit-history?habitName="1"&date="mon"

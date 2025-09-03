@@ -255,6 +255,38 @@ async function controlEmojiDecrement(req, res) {
   res.status(200).json(updatedEmojis);
 }
 
+async function controlSetHabitHistory(req, res) {
+  /* 쿼리 파라미터 파싱 및 입력 검증 */
+  const studyId = Number.parseInt(req.params.studyId, 10);
+  if (!Number.isFinite(studyId) || studyId <= 0) {
+    const err = new Error('유효하지 않은 스터디 ID입니다.');
+    err.status = 400;
+    err.code = 'INVALID_STUDY_ID';
+    throw err;
+  }
+  const habitName = JSON.parse(String(req.query.habitName));
+  if (typeof habitName !== 'string' || habitName.length === 0) {
+    const err = new Error('습관 이름이 누락되었습니다.');
+    err.status = 400;
+    err.code = 'HABIT_NAME_REQUIRED';
+    throw err;
+  }
+  const date = JSON.parse(String(req.query.date));
+  if (typeof date !== 'string' || date.length === 0) {
+    const err = new Error('요일이 누락되었습니다.');
+    err.status = 400;
+    err.code = 'DATE_REQUIRED';
+    throw err;
+  }
+
+  /* 서비스 호출 */
+  const habitHistory = await studyService.serviceSetHabitHistory(studyId, habitName, date);
+
+  /* 결과 반환 */
+  res.status(200).json(habitHistory);
+
+}
+
 export default {
   controlGetStudy,
   controlStudyList,
@@ -265,4 +297,6 @@ export default {
 
   controlEmojiIncrement,
   controlEmojiDecrement,
+
+  controlSetHabitHistory,
 };

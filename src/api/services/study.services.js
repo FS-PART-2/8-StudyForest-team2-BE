@@ -38,7 +38,7 @@ async function serviceGetStudy(){
 async function serviceStudyList(options) {
   const { offset, limit, keyword, pointOrder, recentOrder, isActive } = options;
   const where = {
-    isActive: JSON.parse(isActive),
+    isActive: isActive,
     ...(keyword
       ? {
           name: {
@@ -395,6 +395,70 @@ async function serviceEmojiDecrement(studyId, emojiSymbol, emojiCount) {
   return { deleted: false, studyId: sid, emojiId: eid, count: 0, reason: 'race' };
 }
 
+async function serviceSetHabitHistory(studyId, habitName, date){
+  const sid = Number(studyId);
+  const habitId = await prisma.habit.findMany({
+    where: { habit: habitName },
+    select: { id: true },
+  });
+  const hid = habitId[0].id;
+  // 습관 이름이 존재하지 않는 경우 404 에러 처리
+
+  // if (!hid) {
+  //   const error = new Error('존재하지 않는 습관 이름입니다.');
+  //   error.status = 404;
+  //   error.code = 'HABIT_NOT_FOUND';
+  //   throw error;
+  // }
+
+  let done = {
+    mon: false,
+    tue: false,
+    wed: false,
+    thu: false,
+    fri: false,
+    sat: false,
+    sun: false,
+  };
+
+  switch (date) {
+    case "mon":
+      done.mon = true;
+      break;
+    case "tue":
+      done.tue = true;
+      break;
+    case "wed":
+      done.wed = true;
+      break;
+    case "thu":
+      done.thu = true;
+      break;
+    case "fri":
+      done.fri = true;
+      break;
+    case "sat":
+      done.sat = true;
+      break;
+    case "sun":
+      done.sun = true;
+      break;
+    default:
+      const err = new Error('유효하지 않은 날짜입니다.');
+      err.status = 400;
+      err.code = 'INVALID_DATE';
+      throw err;
+  }
+
+  const result = await prisma.habitHistory.update({
+    where: { studyId_habitId: { studyId: sid, habitId: hid } },
+    data: { done },
+    include: { habits: true },
+  });
+
+  return result;
+}
+
 export default {
   serviceGetStudy,
   serviceStudyList,
@@ -404,5 +468,7 @@ export default {
   serviceStudyDetail,
 
   serviceEmojiIncrement,
-  serviceEmojiDecrement
+  serviceEmojiDecrement,
+
+  serviceSetHabitHistory,
 };
