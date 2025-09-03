@@ -36,9 +36,9 @@ async function serviceGetStudy(){
 
 // 스터디 목록 조회 API 서비스
 async function serviceStudyList(options) {
-  const { offset, limit, keyword, pointOrder, recentOrder } = options;
+  const { offset, limit, keyword, pointOrder, recentOrder, isActive } = options;
   const where = {
-    isActive: true,
+    isActive: JSON.parse(isActive),
     ...(keyword
       ? {
           name: {

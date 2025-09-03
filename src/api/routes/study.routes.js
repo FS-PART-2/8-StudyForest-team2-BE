@@ -188,7 +188,7 @@
  *           oneOf:
  *             - type: string
  *               minLength: 1
- *               description: 이모지 심볼(예: "👍")
+ *               description: 이모지 심볼(예 "👍")
  *               example: 👍
  *             - type: integer
  *               minimum: 1
@@ -285,6 +285,17 @@
  *         name: recentOrder
  *         schema: { type: string, enum: [recent, old] }
  *         example: recent
+ *       - in: query
+ *         name: active
+ *         schema: { type: boolean }
+ *         example: true
+ *     description: |
+ *       - offset: (선택) 건너뛸 레코드 수(기본값 0)
+ *       - limit: (선택) 최대 조회 건수(기본값 6, 최대 50)
+ *       - keyword: (선택) 스터디 이름/닉네임/내용 검색 키워드(부분 일치)
+ *       - pointOrder: (선택) 포인트 합계 기준 정렬(asc/desc, 기본값 desc)
+ *       - recentOrder: (선택) 생성일 기준 정렬(recent/old, 기본값 recent)
+ *       - active: (선택) 활성화 상태 필터(true/false, 미지정 시 전체)
  *     responses:
  *       200:
  *         description: 페이징 목록

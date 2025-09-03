@@ -10,7 +10,7 @@ GET https://eight-studyforest-team2-be.onrender.com/api/studies?offset=0&pointOr
 
 ###
 
-GET http://localhost:3000/api/studies?offset=0&pointOrder=desc&recentOrder=recent
+GET http://localhost:3000/api/studies?offset=0&pointOrder=desc&recentOrder=recent&isActive=false
 
 ###
 
