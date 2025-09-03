@@ -346,7 +346,7 @@
  *               type: object
  *               properties:
  *                 updated: { type: integer, example: 4 }
- *                 newTitle:{ type: string,  example: '단어 100개' }
+ *                 newTitle: { type: string,  example: '단어 100개' }
  *       '400': { description: 잘못된 요청,     content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' }}}}
  *       '401': { description: 인증 실패,       content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' }}}}
  *       '404': { description: 습관/스터디 없음, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' }}}}
