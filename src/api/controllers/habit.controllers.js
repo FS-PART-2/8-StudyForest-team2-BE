@@ -23,21 +23,6 @@ function parsePositiveParam(req, name) {
   }
   return n;
 }
-function parseStudyId(req) {
-  const studyIdStr = req.params.studyId;
-  if (!/^\d+$/.test(studyIdStr)) {
-    const e = new Error('studyId는 1 이상의 정수여야 합니다.');
-    e.status = 400;
-    throw e;
-  }
-  const studyId = Number.parseInt(studyIdStr, 10);
-  if (studyId <= 0) {
-    const e = new Error('studyId는 1 이상의 정수여야 합니다.');
-    e.status = 400;
-    throw e;
-  }
-  return studyId;
-}
 
 function parsePassword(req) {
   const headerPwd = req.get('x-study-password');
@@ -55,7 +40,7 @@ function parsePassword(req) {
 /*오늘의 습관 조회 */
 async function getTodayHabitsController(req, res, next) {
   try {
-    const studyId = parseStudyId(req);
+    const studyId = parsePositiveParam(req, 'studyId');
     const password = parsePassword(req);
     const data = await getTodayHabitsService({ studyId, password });
     res.set('Cache-Control', 'no-store');
@@ -68,6 +53,7 @@ async function getTodayHabitsController(req, res, next) {
     if (err.name === 'NotFoundError') {
       return res.status(404).json({ message: err.message });
     }
+
     return res
       .status(err.status || 500)
       .json({ message: err.message || 'SERVER_ERROR' });
@@ -77,13 +63,7 @@ async function getTodayHabitsController(req, res, next) {
 /* 습관 일괄 생성 (배열로 들어온 title들을 오늘 날짜로 생성)*/
 async function createTodayHabitsController(req, res, next) {
   try {
-    const studyIdStr = req.params.studyId;
-    if (!/^\d+$/.test(studyIdStr)) {
-      return res
-        .status(400)
-        .json({ message: 'studyId는 1 이상의 정수여야 합니다.' });
-    }
-    const studyId = Number.parseInt(studyIdStr, 10);
+    const studyId = parsePositiveParam(req, 'studyId');
 
     const headerPwd = req.get('x-study-password');
     const bodyPwd =
@@ -127,7 +107,9 @@ async function createTodayHabitsController(req, res, next) {
     if (err.name === 'NotFoundError') {
       return res.status(404).json({ message: err.message });
     }
-    return next(err);
+    return res
+      .status(err.status || 500)
+      .json({ message: err.message || 'SERVER_ERROR' });
   }
 }
 
@@ -135,13 +117,7 @@ async function createTodayHabitsController(req, res, next) {
 
 async function toggleHabitController(req, res, next) {
   try {
-    const habitIdStr = req.params.habitId;
-    if (!/^\d+$/.test(habitIdStr)) {
-      return res
-        .status(400)
-        .json({ message: 'habitId는 1 이상의 정수여야 합니다.' });
-    }
-    const habitId = Number.parseInt(habitIdStr, 10);
+    const habitId = parsePositiveParam(req, 'habitId');
 
     const headerPwd = req.get('x-study-password');
     const bodyPwd =
@@ -162,7 +138,9 @@ async function toggleHabitController(req, res, next) {
     if (err.name === 'NotFoundError') {
       return res.status(404).json({ message: err.message });
     }
-    return next(err);
+    return res
+      .status(err.status || 500)
+      .json({ message: err.message || 'SERVER_ERROR' });
   }
 }
 
@@ -170,13 +148,7 @@ async function toggleHabitController(req, res, next) {
 
 async function getWeekHabitsController(req, res, next) {
   try {
-    const studyIdStr = req.params.studyId;
-    if (!/^\d+$/.test(studyIdStr)) {
-      return res
-        .status(400)
-        .json({ message: 'studyId는 1 이상의 정수여야 합니다.' });
-    }
-    const studyId = Number.parseInt(studyIdStr, 10);
+    const studyId = parsePositiveParam(req, 'studyId');
 
     const headerPwd = req.get('x-study-password');
     const bodyPwd =
@@ -200,12 +172,14 @@ async function getWeekHabitsController(req, res, next) {
     if (err.name === 'NotFoundError') {
       return res.status(404).json({ message: err.message });
     }
-    return next(err);
+    return res
+      .status(err.status || 500)
+      .json({ message: err.message || 'SERVER_ERROR' });
   }
 }
 /* 오늘의 습관 이름 변경*/
 async function renameTodayHabitController(req, res) {
-  const studyId = parseStudyId(req);
+  const studyId = parsePositiveParam(req, 'studyId');
   const password = parsePassword(req);
   const habitId = parsePositiveParam(req, 'habitId');
 
@@ -221,6 +195,8 @@ async function renameTodayHabitController(req, res) {
       habitId,
       newTitle,
     });
+    res.set('Cache-Control', 'no-store');
+    res.vary('x-study-password');
     return res.json(result);
   } catch (err) {
     if (err.name === 'UnauthorizedError')
@@ -236,7 +212,7 @@ async function renameTodayHabitController(req, res) {
 }
 /*오늘의 습관 삭제*/
 async function deleteTodayHabitController(req, res) {
-  const studyId = parseStudyId(req);
+  const studyId = parsePositiveParam(req, 'studyId');
   const password = parsePassword(req);
   const habitId = parsePositiveParam(req, 'habitId');
 
@@ -246,6 +222,8 @@ async function deleteTodayHabitController(req, res) {
       password,
       habitId,
     });
+    res.set('Cache-Control', 'no-store');
+    res.vary('x-study-password');
     return res.json(result);
   } catch (err) {
     if (err.name === 'UnauthorizedError')
@@ -257,7 +235,7 @@ async function deleteTodayHabitController(req, res) {
 }
 /* 습관 단일 생성 */
 async function addTodayHabitController(req, res) {
-  const studyId = parseStudyId(req);
+  const studyId = parsePositiveParam(req, 'studyId');
   const password = parsePassword(req);
   const title = String(req.body?.title || '').trim();
   if (!title) {
@@ -266,6 +244,8 @@ async function addTodayHabitController(req, res) {
 
   try {
     const result = await addTodayHabitService({ studyId, password, title });
+    res.set('Cache-Control', 'no-store');
+    res.vary('x-study-password');
     return res.status(201).json(result);
   } catch (err) {
     if (err.name === 'UnauthorizedError')
