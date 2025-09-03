@@ -68,43 +68,44 @@
  *         - $ref: '#/components/schemas/Study'
  *         - type: object
  *           properties:
- *             points:
- *               type: array
- *               description: 포인트 엔티티 배열(필드 구조는 내부 구현을 따름)
- *               items: { type: object, additionalProperties: true }
- *             studyEmojis:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   count: { type: integer, example: 13 }
- *                   emoji:
- *                     type: object
- *                     properties:
- *                       symbol: { type: string, example: 👍 }
- *             habitHistories:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   weekDate:
- *                     type: string
- *                     format: date
- *                     example: 2025-08-31
- *                   habits:
- *                     type: array
- *                     items: { type: object, additionalProperties: true }
- *             focuses:
- *               type: array
- *               items: { type: object, additionalProperties: true }
+ *             _count:
+ *               type: object
+ *               properties:
+ *                 points: { type: integer, example: 12 }
+ *                 habitHistories: { type: integer, example: 4 }
+ *                 focuses: { type: integer, example: 7 }
+ *                 studyEmojis: { type: integer, example: 3 }
  *
  *     StudyListResponse:
  *       type: object
+ *       description: 스터디 목록 조회 응답(studies 우선, totalCount 후행)
  *       properties:
- *         totalCount: { type: integer, example: 127 }
  *         studies:
  *           type: array
  *           items: { $ref: '#/components/schemas/StudyListItem' }
+ *         totalCount:
+ *           type: integer
+ *           description: 전체 스터디 개수
+ *           example: 14
+ *       required:
+ *         - studies
+ *         - totalCount
+ *       example:
+ *         studies:
+ *           - id: 31
+ *             nick: 이서준
+ *             name: 이서준의 코딩 테스트 준비 스터디
+ *             content: 진도를 맞추어 서로 가르쳐주고 배우는 방식입니다.
+ *             img: /img/default.png
+ *             isActive: true
+ *             createdAt: 2025-09-01T12:32:32.567Z
+ *             updatedAt: 2025-09-01T12:32:32.567Z
+ *             _count:
+ *               points: 1
+ *               habitHistories: 1
+ *               focuses: 2
+ *               studyEmojis: 1
+ *         totalCount: 14
  *
  *     StudyDetail:
  *       allOf:
@@ -113,36 +114,117 @@
  *           properties:
  *             studyEmojis:
  *               type: array
+ *               description: 스터디 이모지 집계(상세)
  *               items:
  *                 type: object
  *                 properties:
- *                   count: { type: integer, example: 13 }
+ *                   count: { type: integer, minimum: 0, example: 8 }
  *                   emoji:
  *                     type: object
  *                     properties:
- *                       symbol: { type: string, example: 👍 }
+ *                       id: { type: integer, example: 11 }
+ *                       symbol: { type: string, example: 1f603 }
+ *                       name: { type: string, example: 1f603 }
+ *                       createdAt: { type: string, format: date-time, example: 2025-09-02T08:39:46.720Z }
+ *                       updatedAt: { type: string, format: date-time, example: 2025-09-02T08:39:46.720Z }
  *             habitHistories:
  *               type: array
+ *               description: 주차별 습관 기록
  *               items:
  *                 type: object
  *                 properties:
- *                   weekDate:
- *                     type: string
- *                     format: date
- *                     example: 2025-08-31
+ *                   id: { type: integer, example: 10 }
+ *                   monDone: { type: boolean, example: true }
+ *                   tueDone: { type: boolean, example: true }
+ *                   wedDone: { type: boolean, example: true }
+ *                   thuDone: { type: boolean, example: true }
+ *                   friDone: { type: boolean, example: true }
+ *                   satDone: { type: boolean, example: false }
+ *                   sunDone: { type: boolean, example: true }
+ *                   weekDate: { type: string, format: date-time, example: 2025-08-25T00:00:00.000Z }
+ *                   createdAt: { type: string, format: date-time, example: 2025-09-01T12:32:32.647Z }
+ *                   updatedAt: { type: string, format: date-time, example: 2025-09-01T12:32:32.647Z }
+ *                   studyId: { type: integer, example: 31 }
  *                   habits:
  *                     type: array
- *                     items: { type: object, additionalProperties: true }
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         id: { type: integer, example: 17 }
+ *                         habit: { type: string, example: 물 1리터 마시기 }
+ *                         isDone: { type: boolean, example: true }
+ *                         date: { type: string, format: date-time, example: 2025-08-31T18:28:12.431Z }
+ *                         createdAt: { type: string, format: date-time, example: 2025-09-01T12:32:32.650Z }
+ *                         updatedAt: { type: string, format: date-time, example: 2025-09-01T12:32:32.650Z }
+ *                         habitHistoryId: { type: integer, example: 10 }
  *             _count:
  *               type: object
  *               properties:
- *                 points: { type: integer, example: 12 }
- *                 studyEmojis: { type: integer, example: 3 }
- *                 habitHistories: { type: integer, example: 4 }
+ *                 points: { type: integer, minimum: 0, example: 1 }
+ *                 studyEmojis: { type: integer, minimum: 0, example: 2 }
+ *                 habitHistories: { type: integer, minimum: 0, example: 1 }
  *             pointsSum:
  *               type: integer
+ *               minimum: 0
  *               description: 포인트 합계
- *               example: 42
+ *               example: 5
+ *       example:
+ *         id: 31
+ *         nick: kimdy2
+ *         name: 스터디(수정)
+ *         content: 수정된 스터디 입니다.
+ *         img: https://example.com/banner2.png
+ *         isActive: true
+ *         createdAt: 2025-09-01T12:32:32.567Z
+ *         updatedAt: 2025-09-03T09:26:24.451Z
+ *         studyEmojis:
+ *           - count: 19
+ *             emoji:
+ *               id: 1
+ *               symbol: 🔥
+ *               name: 불
+ *               createdAt: 2025-09-01T11:02:59.064Z
+ *               updatedAt: 2025-09-01T12:32:32.636Z
+ *           - count: 8
+ *             emoji:
+ *               id: 11
+ *               symbol: 1f603
+ *               name: 1f603
+ *               createdAt: 2025-09-02T08:39:46.720Z
+ *               updatedAt: 2025-09-02T08:39:46.720Z
+ *         habitHistories:
+ *           - id: 10
+ *             monDone: true
+ *             tueDone: true
+ *             wedDone: true
+ *             thuDone: true
+ *             friDone: true
+ *             satDone: false
+ *             sunDone: true
+ *             weekDate: 2025-08-25T00:00:00.000Z
+ *             createdAt: 2025-09-01T12:32:32.647Z
+ *             updatedAt: 2025-09-01T12:32:32.647Z
+ *             studyId: 31
+ *             habits:
+ *               - id: 17
+ *                 habit: 물 1리터 마시기
+ *                 isDone: true
+ *                 date: 2025-08-31T18:28:12.431Z
+ *                 createdAt: 2025-09-01T12:32:32.650Z
+ *                 updatedAt: 2025-09-01T12:32:32.650Z
+ *                 habitHistoryId: 10
+ *               - id: 18
+ *                 habit: 기상 후 스트레칭
+ *                 isDone: true
+ *                 date: 2025-08-30T22:43:47.311Z
+ *                 createdAt: 2025-09-01T12:32:32.650Z
+ *                 updatedAt: 2025-09-01T12:32:32.650Z
+ *                 habitHistoryId: 10
+ *         _count:
+ *           points: 1
+ *           studyEmojis: 2
+ *           habitHistories: 1
+ *         pointsSum: 5
  *
  *     StudyCreateInput:
  *       type: object
@@ -181,34 +263,41 @@
  *
  *     EmojiCountInput:
  *       type: object
- *       required: [id, count]
+ *       required: [id, emoji, count]
  *       properties:
  *         id:
- *           description: 이모지 식별자(심볼 또는 정수 ID)
- *           oneOf:
- *             - type: string
- *               minLength: 1
- *               description: 이모지 심볼(예 "👍")
- *               example: 👍
- *             - type: integer
- *               minimum: 1
- *               description: 이모지 ID(정수)
+ *           type: string
+ *           description: 이모지 유니코드 코드포인트(16진수)
+ *           pattern: '^[0-9a-fA-F]{4,8}$'
+ *           example: 1f603
+ *         emoji:
+ *           type: string
+ *           description: 실제 이모지 문자
+ *           minLength: 1
+ *           example: 😃
  *         count:
  *           type: integer
  *           minimum: 1
- *           description: 증감 수량(정수, 최소 1)
- *           example: 3
+ *           description: 증가/감소 수량(양의 정수)
+ *           example: 1
  *
  *     StudyEmoji:
  *       type: object
  *       properties:
- *         studyId: { type: integer, example: 101 }
- *         emojiId: { type: integer, example: 12 }
- *         count: { type: integer, example: 13 }
+ *         id:        { type: integer, example: 23 }
+ *         count:     { type: integer, example: 7 }
+ *         createdAt: { type: string, format: date-time, example: 2025-09-03T09:01:20.479Z }
+ *         updatedAt: { type: string, format: date-time, example: 2025-09-03T09:11:04.085Z }
+ *         studyId:   { type: integer, example: 31 }
+ *         emojiId:   { type: integer, example: 11 }
  *         emoji:
  *           type: object
+ *           nullable: true
  *           properties:
- *             symbol: { type: string, example: 👍 }
+ *             symbol:
+ *               type: string
+ *               description: 이모지 코드포인트(16진수) 또는 문자
+ *               example: 1f603
  *
  *     EmojiUpdated:
  *       allOf:
@@ -218,22 +307,114 @@
  *       type: object
  *       properties:
  *         deleted: { type: boolean, example: true }
- *         studyId: { type: integer, example: 101 }
+ *         studyId: { type: integer, example: 31 }
  *         emojiId:
  *           type: integer
  *           nullable: true
- *           example: 12
+ *           example: 2
  *         count: { type: integer, example: 0 }
  *         reason:
  *           type: string
  *           nullable: true
  *           description: 'not-exists | emoji-not-found | race 등'
- *           example: 'not-exists'
+ *           example: not-exists
  *
  *     EmojiActionResult:
  *       oneOf:
  *         - $ref: '#/components/schemas/EmojiUpdated'
  *         - $ref: '#/components/schemas/EmojiDeleted'
+ *
+ * paths:
+ *     /api/studies/{studyId}:
+ *     get:
+ *       summary: 스터디 상세조회
+ *       tags: [Studies]
+ *       parameters:
+ *         - $ref: '#/components/parameters/StudyIdParam'
+ *       responses:
+ *         200:
+ *           description: OK
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 $ref: '#/components/schemas/StudyDetail'
+ *               examples:
+ *                 populated:
+ *                   value:
+ *                     id: 31
+ *                     nick: kimdy2
+ *                     name: 스터디(수정)
+ *                     content: 수정된 스터디 입니다.
+ *                     img: https://example.com/banner2.png
+ *                     isActive: true
+ *                     createdAt: 2025-09-01T12:32:32.567Z
+ *                     updatedAt: 2025-09-03T09:26:24.451Z
+ *                     studyEmojis:
+ *                       - count: 19
+ *                         emoji:
+ *                           id: 1
+ *                           symbol: 🔥
+ *                           name: 불
+ *                           createdAt: 2025-09-01T11:02:59.064Z
+ *                           updatedAt: 2025-09-01T12:32:32.636Z
+ *                       - count: 8
+ *                         emoji:
+ *                           id: 11
+ *                           symbol: 1f603
+ *                           name: 1f603
+ *                           createdAt: 2025-09-02T08:39:46.720Z
+ *                           updatedAt: 2025-09-02T08:39:46.720Z
+ *                     habitHistories:
+ *                       - id: 10
+ *                         monDone: true
+ *                         tueDone: true
+ *                         wedDone: true
+ *                         thuDone: true
+ *                         friDone: true
+ *                         satDone: false
+ *                         sunDone: true
+ *                         weekDate: 2025-08-25T00:00:00.000Z
+ *                         createdAt: 2025-09-01T12:32:32.647Z
+ *                         updatedAt: 2025-09-01T12:32:32.647Z
+ *                         studyId: 31
+ *                         habits:
+ *                           - id: 17
+ *                             habit: 물 1리터 마시기
+ *                             isDone: true
+ *                             date: 2025-08-31T18:28:12.431Z
+ *                             createdAt: 2025-09-01T12:32:32.650Z
+ *                             updatedAt: 2025-09-01T12:32:32.650Z
+ *                             habitHistoryId: 10
+ *                           - id: 18
+ *                             habit: 기상 후 스트레칭
+ *                             isDone: true
+ *                             date: 2025-08-30T22:43:47.311Z
+ *                             createdAt: 2025-09-01T12:32:32.650Z
+ *                             updatedAt: 2025-09-01T12:32:32.650Z
+ *                             habitHistoryId: 10
+ *                     _count:
+ *                       points: 1
+ *                       studyEmojis: 2
+ *                       habitHistories: 1
+ *                     pointsSum: 5
+ *                 empty:
+ *                   value:
+ *                     id: 33
+ *                     nick: kimdy
+ *                     name: 알고리즘 스터디
+ *                     content: 매주 토요일 10시 온라인 진행
+ *                     img: https://example.com/banner.png
+ *                     isActive: true
+ *                     createdAt: 2025-09-03T08:45:46.916Z
+ *                     updatedAt: 2025-09-03T08:45:46.916Z
+ *                     studyEmojis: []
+ *                     habitHistories: []
+ *                     _count:
+ *                       points: 0
+ *                       studyEmojis: 0
+ *                       habitHistories: 0
+ *                     pointsSum: 0
+ *
  */
 
 /**
