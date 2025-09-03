@@ -5,7 +5,7 @@ import coreMiddleware from '../../../src/common/cors.js';
 import errorMiddleware from '../../../src/common/error.js'; // 에러 케이스 추가는 이 파일에서 관리
 
 const router = express.Router();
-
+router.use(coreMiddleware); // CORS 미들웨어 적용
 /**
  * @swagger
  * tags:
@@ -51,24 +51,33 @@ const router = express.Router();
  *             schema:
  *               type: object
  *               properties:
- *                 id:
- *                   type: integer
- *                   example: 1
- *                 username:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
  *                   type: string
- *                   example: "hong"
- *                 email:
- *                   type: string
- *                   example: "hong@example.com"
- *                 nick:
- *                   type: string
- *                   example: "홍길동"
- *                 createdAt:
- *                   type: string
- *                   format: date-time
- *                 updatedAt:
- *                   type: string
- *                   format: date-time
+ *                   example: "회원가입이 완료되었습니다."
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     username:
+ *                       type: string
+ *                       example: "hong"
+ *                     email:
+ *                       type: string
+ *                       example: "hong@example.com"
+ *                     nick:
+ *                       type: string
+ *                       example: "홍길동"
+ *                     createdAt:
+ *                       type: string
+ *                       format: date-time
+ *                     updatedAt:
+ *                       type: string
+ *                       format: date-time
  *       '400':
  *         description: 잘못된 요청 (유효성 검사 실패, 비밀번호 정책 위반 등)
  *       '409':
@@ -88,7 +97,6 @@ router.post(
 // // 프로필 조회 (인증 필요)
 // router.get('/profile', authenticateToken, userController.getProfile);
 //
-router.use(coreMiddleware); // CORS 미들웨어 적용
 
 // 에러 핸들링 미들웨어 적용, 가장 마지막에 위치해야 합니다.
 router.use(errorMiddleware.errorHandler);

@@ -2,28 +2,25 @@ import { validationResult } from 'express-validator';
 import { createUserService } from '../services/user.services.js';
 
 export async function registerController(req, res, next) {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      const err = new Error('입력 데이터가 유효하지 않습니다.');
-      err.status = 400;
-      err.code = 'VALIDATION_ERROR';
-      err.details = errors.array();
-      throw err;
-    }
-
-    const { email, password, username, nick } = req.body;
-
-    const user = await createUserService({ email, password, username, nick });
-
-    res.status(201).json({
-      success: true,
-      message: '회원가입이 완료되었습니다.',
-      data: user,
-    });
-  } catch (err) {
-    next(err);
+  const result = validationResult(req);
+  if (!result.isEmpty()) {
+    const err = new Error('입력 데이터가 유효하지 않습니다.');
+    err.status = 400;
+    err.code = 'VALIDATION_ERROR';
+    // 민감한 값(value) 제거 및 첫 에러만 노출
+    err.details = result
+      .array({ onlyFirstError: true })
+      .map(({ msg, param, location }) => ({ msg, param, location }));
+    throw err;
   }
+
+  const { email, password, username, nick } = req.body;
+  const user = await createUserService({ email, password, username, nick });
+  res.status(201).location(`${req.baseUrl}/${user.id}`).json({
+    success: true,
+    message: '회원가입이 완료되었습니다.',
+    data: user,
+  });
 }
 //   // 로그인
 //   async login(req, res, next) {

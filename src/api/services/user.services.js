@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import argon2 from 'argon2';
 
 const prisma = new PrismaClient();
@@ -25,24 +25,42 @@ export async function createUserService({ email, password, username, nick }) {
 
   const hashed = await argon2.hash(password);
 
-  const user = await prisma.user.create({
-    data: {
-      email,
-      password: hashed,
-      username,
-      nick,
-    },
-    select: {
-      id: true,
-      email: true,
-      username: true,
-      nick: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
-
-  return user;
+  try {
+    const user = await prisma.user.create({
+      data: { email, password: hashed, username, nick },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        nick: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+    return user;
+  } catch (e) {
+    if (
+      e instanceof Prisma.PrismaClientKnownRequestError &&
+      e.code === 'P2002'
+    ) {
+      const target = Array.isArray(e.meta?.target)
+        ? e.meta.target.join(',')
+        : String(e.meta?.target ?? '');
+      if (target.includes('email')) {
+        const err = new Error('이미 사용 중인 이메일입니다.');
+        err.status = 409;
+        err.code = 'DUPLICATE_EMAIL';
+        throw err;
+      }
+      if (target.includes('username')) {
+        const err = new Error('이미 사용 중인 사용자명(username)입니다.');
+        err.status = 409;
+        err.code = 'DUPLICATE_USERNAME';
+        throw err;
+      }
+    }
+    throw e;
+  }
 }
 //   // 사용자 로그인
 //   async loginUser({ email, password }) {
