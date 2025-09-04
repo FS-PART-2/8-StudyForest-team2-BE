@@ -54,8 +54,8 @@ async function serviceStudyList(options) {
       const pointAgg = await prisma.point.groupBy({
         by: ['studyId'],
         where: { study: studyWhere },         // Point -> Study 역참조명: study
-        _max: { value: true },
-        orderBy: { _max: { value: pointOrder === 'asc' ? 'asc' : 'desc' } },
+        _max: { point: true },
+        orderBy: { _max: { point: pointOrder === 'asc' ? 'asc' : 'desc' } },
         skip: offset,
         take: limit,
       });
