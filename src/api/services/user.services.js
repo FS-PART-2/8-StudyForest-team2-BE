@@ -1,7 +1,13 @@
 import { PrismaClient, Prisma } from '@prisma/client';
 import argon2 from 'argon2';
-
+import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 const prisma = new PrismaClient();
+
+// 환경변수(개발용 기본값 제공) 실제 배포시 반드시 환경변수 체크하기
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
+const ACCESS_EXPIRES_IN = process.env.ACCESS_EXPIRES_IN || '1h'; // 예: '1h'
+const REFRESH_EXPIRES_DAYS = Number(process.env.REFRESH_EXPIRES_DAYS || '7'); // 7일
 
 export async function createUserService({ email, password, username, nick }) {
   // 중복 이메일/username 체크
@@ -61,6 +67,119 @@ export async function createUserService({ email, password, username, nick }) {
     }
     throw e;
   }
+}
+function signAccessToken(payload) {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: ACCESS_EXPIRES_IN });
+}
+
+function makeRefreshToken() {
+  // 임의의 고Entropy 토큰(순수 문자열). 필요 시 JWT로 바꿔도 OK.
+  return crypto.randomBytes(48).toString('hex');
+}
+
+export async function loginUserService({ email, password, userAgent, ip }) {
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) {
+    const err = new Error('이메일 또는 비밀번호가 올바르지 않습니다.');
+    err.status = 401;
+    err.code = 'INVALID_CREDENTIALS';
+    throw err;
+  }
+
+  const ok = await argon2.verify(user.password, password);
+  if (!ok) {
+    const err = new Error('이메일 또는 비밀번호가 올바르지 않습니다.');
+    err.status = 401;
+    err.code = 'INVALID_CREDENTIALS';
+    throw err;
+  }
+
+  // 액세스 토큰
+  const accessToken = signAccessToken({ userId: user.id, email: user.email });
+
+  // 리프레시 토큰(문자열) 발급 + DB 저장(유니크 컬럼)
+  const refreshToken = makeRefreshToken();
+
+  // 기존 토큰 한 개 정책: 유저당 1개만 유지하고 싶다면 refreshToken을 덮어쓰기
+  // 여러 기기 허용 정책이면 UserRefreshToken 테이블로 확장 권장
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { refreshToken },
+    select: { id: true },
+  });
+
+  const refreshExpiresAt = new Date(
+    Date.now() + REFRESH_EXPIRES_DAYS * 24 * 60 * 60 * 1000,
+  );
+
+  return {
+    accessToken,
+    refreshToken,
+    refreshExpiresAt,
+    user: {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      nick: user.nick,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    },
+  };
+}
+
+export async function rotateRefreshTokenService(oldRefreshToken) {
+  if (!oldRefreshToken) {
+    const err = new Error('리프레시 토큰이 필요합니다.');
+    err.status = 401;
+    err.code = 'NO_REFRESH_TOKEN';
+    throw err;
+  }
+
+  const user = await prisma.user.findFirst({
+    where: { refreshToken: oldRefreshToken },
+  });
+  if (!user) {
+    const err = new Error('유효하지 않은 리프레시 토큰입니다.');
+    err.status = 401;
+    err.code = 'INVALID_REFRESH_TOKEN';
+    throw err;
+  }
+
+  // 새 액세스/리프레시 발급
+  const accessToken = signAccessToken({ userId: user.id, email: user.email });
+  const newRefreshToken = makeRefreshToken();
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { refreshToken: newRefreshToken },
+    select: { id: true },
+  });
+
+  const refreshExpiresAt = new Date(
+    Date.now() + REFRESH_EXPIRES_DAYS * 24 * 60 * 60 * 1000,
+  );
+
+  return {
+    accessToken,
+    refreshToken: newRefreshToken,
+    refreshExpiresAt,
+    user: {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      nick: user.nick,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    },
+  };
+}
+
+export async function logoutUserService(refreshToken) {
+  if (!refreshToken) return;
+  // 해당 토큰을 가진 유저만 로그아웃 처리(덮어쓰기)
+  await prisma.user.updateMany({
+    where: { refreshToken },
+    data: { refreshToken: null },
+  });
 }
 //   // 사용자 로그인
 //   async loginUser({ email, password }) {

@@ -24,3 +24,12 @@ export const validateRegister = [
     .matches(/^[\p{L}\p{N}_\s]+$/u)
     .withMessage('닉네임은 글자/숫자/언더바/공백만 허용됩니다.'),
 ];
+export const validateLogin = [
+  body('email')
+    .isEmail()
+    .withMessage('유효한 이메일을 입력해주세요.')
+    .normalizeEmail(),
+  body('password')
+    .isLength({ min: 8, max: 16 })
+    .withMessage('비밀번호는 8자 이상 16자 이하여야 합니다.'),
+];

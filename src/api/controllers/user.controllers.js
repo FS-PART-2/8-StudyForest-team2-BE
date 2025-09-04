@@ -1,13 +1,17 @@
 import { validationResult } from 'express-validator';
-import { createUserService } from '../services/user.services.js';
-
+import {
+  createUserService,
+  loginUserService,
+  rotateRefreshTokenService,
+  logoutUserService,
+} from '../services/user.services.js';
+// 회원가입
 export async function registerController(req, res, next) {
   const result = validationResult(req);
   if (!result.isEmpty()) {
     const err = new Error('입력 데이터가 유효하지 않습니다.');
     err.status = 400;
     err.code = 'VALIDATION_ERROR';
-    // 민감한 값(value) 제거 및 첫 에러만 노출
     err.details = result
       .array({ onlyFirstError: true })
       .map(({ msg, param, location }) => ({ msg, param, location }));
@@ -22,44 +26,78 @@ export async function registerController(req, res, next) {
     data: user,
   });
 }
-//   // 로그인
-//   async login(req, res, next) {
-//     try {
-//       const errors = validationResult(req);
-//       if (!errors.isEmpty()) {
-//         return next(
-//           createError(400, '입력 데이터가 유효하지 않습니다.', errors.array()),
-//         );
-//       }
-//
-//       const { email, password } = req.body;
-//       const result = await userService.loginUser({ email, password });
-//
-//       res.json({
-//         success: true,
-//         message: '로그인이 완료되었습니다.',
-//         data: result,
-//       });
-//     } catch (error) {
-//       next(error);
-//     }
-//   },
-//
-//   // 로그아웃
-//   async logout(req, res, next) {
-//     try {
-//       const token = req.headers.authorization?.split(' ')[1];
-//       await userService.logoutUser(token);
-//
-//       res.json({
-//         success: true,
-//         message: '로그아웃이 완료되었습니다.',
-//       });
-//     } catch (error) {
-//       next(error);
-//     }
-//   },
-//
+// 로그인
+export async function loginController(req, res) {
+  const result = validationResult(req);
+  if (!result.isEmpty()) {
+    const err = new Error('입력 데이터가 유효하지 않습니다.');
+    err.status = 400;
+    err.code = 'VALIDATION_ERROR';
+    err.details = result
+      .array({ onlyFirstError: true })
+      .map(({ msg, param, location }) => ({ msg, param, location }));
+    throw err;
+  }
+
+  const { email, password } = req.body;
+  const ua = req.get('User-Agent') || '';
+  const ip = req.ip;
+
+  const { accessToken, refreshToken, refreshExpiresAt, user } =
+    await loginUserService({ email, password, userAgent: ua, ip });
+
+  res
+    .cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      expires: refreshExpiresAt,
+    })
+    .json({
+      success: true,
+      message: '로그인이 완료되었습니다.',
+      data: {
+        accessToken,
+        user,
+      },
+    });
+}
+// 액세스 토큰 재발급
+export async function refreshTokenController(req, res) {
+  const token = req.cookies?.refreshToken || req.body?.refreshToken;
+  const { accessToken, refreshToken, refreshExpiresAt, user } =
+    await rotateRefreshTokenService(token);
+
+  res
+    .cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      expires: refreshExpiresAt,
+    })
+    .json({
+      success: true,
+      message: '토큰이 재발급되었습니다.',
+      data: { accessToken, user },
+    });
+}
+// 로그아웃
+export async function logoutController(req, res) {
+  const token = req.cookies?.refreshToken || req.body?.refreshToken;
+  await logoutUserService(token);
+
+  // 쿠키 삭제
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+  });
+
+  res.json({
+    success: true,
+    message: '로그아웃이 완료되었습니다.',
+  });
+}
 //   // 프로필 조회
 //   async getProfile(req, res, next) {
 //     try {
