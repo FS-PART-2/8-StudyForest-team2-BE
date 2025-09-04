@@ -166,7 +166,6 @@ export async function rotateRefreshTokenService(oldRefreshToken) {
   return {
     accessToken,
     refreshToken: newRefreshToken,
-    refreshExpiresAt,
     user: {
       id: user.id,
       email: user.email,
