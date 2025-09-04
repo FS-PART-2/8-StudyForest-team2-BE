@@ -14,6 +14,7 @@ import morgan from 'morgan';
 import studyRoutes from '../src/api/routes/study.routes.js';
 import habitRoutes from '../src/api/routes/habit.routes.js';
 import userRoutes from '../src/api/routes/user.routes.js';
+import cookieParser from 'cookie-parser';
 import { swaggerDocs } from './common/swagger.js';
 // 환경 변수 설정
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -35,6 +36,7 @@ app.use(morgan('combined'));
 app.use('/api/studies', studyRoutes);
 app.use('/api', habitRoutes);
 app.use('/api/users', userRoutes);
+app.use(cookieParser());
 
 // Swagger 문서
 swaggerDocs(app);
