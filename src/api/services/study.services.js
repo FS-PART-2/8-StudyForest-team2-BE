@@ -57,7 +57,7 @@ async function serviceStudyList(options) {
         _max: { point: true },
         orderBy: { _max: { point: pointOrder === 'asc' ? 'asc' : 'desc' } },
         skip: offset,
-        take: limit,
+        take: Math.min(limit, 50),
       });
 
       const orderedIds = pointAgg.map(r => r.studyId);
@@ -79,24 +79,22 @@ async function serviceStudyList(options) {
       });
 
       // 원래 정렬 순서 유지 + createdAt 타이브레이크 적용(동점일 때)
-      const maxByStudyId = new Map(pointAgg.map(r => [r.studyId, r._max.value ?? 0]));
+      const scoreByStudyId = new Map(pointAgg.map(r => [r.studyId, r._sum.value ?? 0]));
       const mapById = new Map(studiesRaw.map(s => [s.id, s]));
-      let studies = orderedIds
-        .map(id => mapById.get(id))
-        .filter(Boolean)
-        .sort((a, b) => {
-          const va = maxByStudyId.get(a.id) ?? 0;
-          const vb = maxByStudyId.get(b.id) ?? 0;
-          if (va !== vb) return pointOrder === 'asc' ? va - vb : vb - va;
-          return recentOrder === 'recent'
-            ? new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-            : new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-        });
+    orderedIds
+      .map(id => mapById.get(id))
+      .filter(Boolean)
+      .sort((a, b) => {
+        const va = scoreByStudyId.get(a.id) ?? 0;
+        const vb = scoreByStudyId.get(b.id) ?? 0;
+        if (va !== vb) return pointOrder === 'asc' ? va - vb : vb - va;
+        return recentOrder === 'recent'
+          ? new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          : new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      });
 
-      const totalCount = await prisma.study.count({ where: studyWhere });
-
-      studies = studiesRaw.map((study) => {
-      return {
+    const totalCount = await prisma.study.count({ where: studyWhere });
+    const normalizedById = new Map(studiesRaw.map(study => [study.id, {
         ...study,
         // studyEmojis 구조 변환
         studyEmojis: study.studyEmojis.map((e) => ({
@@ -104,10 +102,13 @@ async function serviceStudyList(options) {
           count: e.count,
           symbol: e.emoji.symbol,
         })),
-        // points 배열 → 단일 값(없으면 0)
-        points: study.points.length > 0 ? study.points[0].value : 0,
-      };
-    });
+        // points 배열 → 합계 또는 0
+        points: (scoreByStudyId.get(study.id) ?? 0),
+      }]));
+
+      const studies = orderedIds
+        .map(id => normalizedById.get(id))
+        .filter(Boolean);
 
       return { studies, totalCount };
   } catch (error) {
