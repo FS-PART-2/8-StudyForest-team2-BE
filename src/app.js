@@ -1,20 +1,14 @@
-// // src/app.js (라우트 추가)
-// const userRoutes = require('./api/routes/user.routes');
-//
-// // 라우트 등록
-// app.use('/api/users', userRoutes);
-
 // 환경 변수 관련 라이브러리
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
-
+import cookieParser from 'cookie-parser';
 import express from 'express';
 import morgan from 'morgan';
 import studyRoutes from '../src/api/routes/study.routes.js';
 import habitRoutes from '../src/api/routes/habit.routes.js';
 import userRoutes from '../src/api/routes/user.routes.js';
-import cookieParser from 'cookie-parser';
+
 import { swaggerDocs } from './common/swagger.js';
 // 환경 변수 설정
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
