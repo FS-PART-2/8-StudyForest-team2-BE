@@ -159,7 +159,7 @@ export async function rotateRefreshTokenService(oldRefreshToken) {
   const newRefreshToken = makeRefreshToken();
   await prisma.user.update({
     where: { id: user.id },
-    data: { refreshToken: newRefreshToken },
+    data: { refreshToken },
     select: { id: true },
   });
 
