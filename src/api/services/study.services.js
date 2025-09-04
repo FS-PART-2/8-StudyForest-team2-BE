@@ -50,6 +50,9 @@ async function serviceStudyList(options) {
   };
 
   try {
+    const studyPoint = prisma.point.findFirst({
+      where: { studyId: 1 },
+    });
     const [studies, totalCount] = await Promise.all([
       prisma.study.findMany({
         where,
@@ -72,13 +75,17 @@ async function serviceStudyList(options) {
           isActive: true,
           createdAt: true,
           updatedAt: true,
-          _count: {
+          studyEmojis: {
+            orderBy: { count: 'desc' },
+            take: 3,
             select: {
-              points: true,
-              habitHistories: true,
-              focuses: true,
-              studyEmojis: true,
+              count: true,
+              // 아래는 예시: 실제 StudyEmoji 스키마에 맞춰 조정하세요.
+              emoji: { select: { id: true, symbol: true } },
             },
+          },
+          points: {
+            select: { value: true },
           },
         },
       }),
