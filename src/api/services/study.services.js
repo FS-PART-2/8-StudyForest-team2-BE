@@ -56,10 +56,11 @@ async function serviceStudyList(options) {
     isActive: isActive,
     ...(keyword
       ? {
-          name: {
-            contains: keyword,
-            mode: 'insensitive',
-          },
+          OR: [
+            { nick: { contains: keyword, mode: 'insensitive' } },
+            { name: { contains: keyword, mode: 'insensitive' } },
+            { content: { contains: keyword, mode: 'insensitive' } },
+          ],
         }
       : {}),
   };
@@ -92,7 +93,6 @@ async function serviceStudyList(options) {
             take: 3,
             select: {
               count: true,
-              // 아래는 예시: 실제 StudyEmoji 스키마에 맞춰 조정하세요.
               emoji: { select: { id: true, symbol: true } },
             },
           },
@@ -250,7 +250,7 @@ async function serviceStudyDetail(studyId) {
           },
           habitHistories: {
             orderBy: { weekDate: 'desc' },
-            take: 1, // 최신 1개만 예시
+            take: 1,
             include: { habits: true },
           },
           _count: {
