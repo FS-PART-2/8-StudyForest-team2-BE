@@ -419,69 +419,6 @@ async function serviceEmojiDecrement(studyId, emojiSymbol, emojiCount) {
   return { deleted: false, studyId: sid, emojiId: eid, count: 0, reason: 'race' };
 }
 
-async function serviceSetHabitHistory(studyId, habitName, date){
-  const habitId = await prisma.habit.findMany({
-    where: { habit: habitName },
-    select: { habitHistoryId: true },
-  });
-  const hid = habitId[0].habitHistoryId;
-
-  let done = {
-    mon: false,
-    tue: false,
-    wed: false,
-    thu: false,
-    fri: false,
-    sat: false,
-    sun: false,
-  };
-
-  switch (date) {
-    case "mon":
-      done.mon = true;
-      break;
-    case "tue":
-      done.tue = true;
-      break;
-    case "wed":
-      done.wed = true;
-      break;
-    case "thu":
-      done.thu = true;
-      break;
-    case "fri":
-      done.fri = true;
-      break;
-    case "sat":
-      done.sat = true;
-      break;
-    case "sun":
-      done.sun = true;
-      break;
-    default:
-      const err = new Error('유효하지 않은 날짜입니다.');
-      err.status = 400;
-      err.code = 'INVALID_DATE';
-      throw err;
-  }
-
-  const result = await prisma.habitHistory.update({
-    where: { id: hid },
-    data: {
-      monDone: done.mon,
-      tueDone: done.tue,
-      wedDone: done.wed,
-      thuDone: done.thu,
-      friDone: done.fri,
-      satDone: done.sat,
-      sunDone: done.sun,
-    },
-    include: { habits: true },
-  });
-
-  return result;
-}
-
 export default {
   serviceGetStudy,
   serviceStudyList,
@@ -492,6 +429,4 @@ export default {
 
   serviceEmojiIncrement,
   serviceEmojiDecrement,
-
-  serviceSetHabitHistory,
 };

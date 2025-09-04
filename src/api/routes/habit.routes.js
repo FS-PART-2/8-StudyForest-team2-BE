@@ -395,6 +395,7 @@ import {
   renameTodayHabitController,
   deleteTodayHabitController,
   addTodayHabitController,
+  setWeekHabitsController
 } from '../controllers/habit.controllers.js';
 
 const router = express.Router();
@@ -441,6 +442,13 @@ router.post(
   '/habits/today/:studyId',
   errorMiddleware.asyncHandler(addTodayHabitController),
 );
+
+// 습관 기록표 API 엔드포인트
+router.post(
+  '/:studyId/habit-history',
+  errorMiddleware.asyncHandler(setWeekHabitsController),
+);
+
 // 에러 핸들링 미들웨어 (맨 마지막)
 router.use(errorMiddleware.errorHandler);
 

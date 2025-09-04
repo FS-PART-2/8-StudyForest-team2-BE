@@ -733,12 +733,6 @@ router.post(
   errorMiddleware.asyncHandler(studyController.controlEmojiDecrement),
 );
 
-// 습관 기록표 API 엔드포인트
-router.post(
-  '/:studyId/habit-history',
-  errorMiddleware.asyncHandler(studyController.controlSetHabitHistory),
-);
-
 // 에러 핸들링 미들웨어 적용, 가장 마지막에 위치해야 합니다.
 router.use(errorMiddleware.errorHandler);
 
