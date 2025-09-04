@@ -41,10 +41,11 @@ async function serviceStudyList(options) {
     isActive: isActive,
     ...(keyword
       ? {
-          name: {
-            contains: keyword,
-            mode: 'insensitive',
-          },
+          OR: [
+            { nick: { contains: keyword, mode: 'insensitive' } },
+            { name: { contains: keyword, mode: 'insensitive' } },
+            { content: { contains: keyword, mode: 'insensitive' } },
+          ],
         }
       : {}),
   };
