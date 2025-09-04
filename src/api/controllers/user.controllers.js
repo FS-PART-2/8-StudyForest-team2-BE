@@ -64,7 +64,14 @@ export async function loginController(req, res) {
 }
 // 액세스 토큰 재발급
 export async function refreshTokenController(req, res) {
-  const token = req.cookies?.refreshToken || req.body?.refreshToken;
+  const token = req.cookies?.refreshToken;
+  if (!token) {
+    const err = new Error('리프레시 토큰이 필요합니다.');
+    err.status = 401;
+    err.code = 'NO_REFRESH_TOKEN';
+    throw err;
+  }
+
   const { accessToken, refreshToken, refreshExpiresAt, user } =
     await rotateRefreshTokenService(token);
 
@@ -73,6 +80,7 @@ export async function refreshTokenController(req, res) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
+      path: '/',
       expires: refreshExpiresAt,
     })
     .json({
@@ -83,8 +91,10 @@ export async function refreshTokenController(req, res) {
 }
 // 로그아웃
 export async function logoutController(req, res) {
-  const token = req.cookies?.refreshToken || req.body?.refreshToken;
-  await logoutUserService(token);
+  const token = req.cookies?.refreshToken;
+  if (token) {
+    await logoutUserService(token);
+  }
 
   // 쿠키 삭제
   res.clearCookie('refreshToken', {

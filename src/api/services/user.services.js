@@ -4,11 +4,25 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 const prisma = new PrismaClient();
 
-// 환경변수(개발용 기본값 제공) 실제 배포시 반드시 환경변수 체크하기
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
-const ACCESS_EXPIRES_IN = process.env.ACCESS_EXPIRES_IN || '1h'; // 예: '1h'
-const REFRESH_EXPIRES_DAYS = Number(process.env.REFRESH_EXPIRES_DAYS || '7'); // 7일
-
+// 필수: JWT_SECRET 미설정 시 즉시 실패
+const {
+  JWT_SECRET,
+  ACCESS_EXPIRES_IN = '1h',
+  REFRESH_EXPIRES_DAYS: REFRESH_EXPIRES_DAYS_RAW = '7',
+} = process.env;
+if (!JWT_SECRET) {
+  throw Object.assign(new Error('JWT_SECRET is required'), {
+    status: 500,
+    code: 'MISSING_JWT_SECRET',
+  });
+}
+const REFRESH_EXPIRES_DAYS = Number(REFRESH_EXPIRES_DAYS_RAW);
+if (!Number.isFinite(REFRESH_EXPIRES_DAYS) || REFRESH_EXPIRES_DAYS <= 0) {
+  throw Object.assign(
+    new Error('REFRESH_EXPIRES_DAYS must be a positive number'),
+    { status: 500, code: 'INVALID_REFRESH_EXPIRES' },
+  );
+}
 export async function createUserService({ email, password, username, nick }) {
   // 중복 이메일/username 체크
   const [emailExists, usernameExists] = await Promise.all([
@@ -108,14 +122,9 @@ export async function loginUserService({ email, password, userAgent, ip }) {
     select: { id: true },
   });
 
-  const refreshExpiresAt = new Date(
-    Date.now() + REFRESH_EXPIRES_DAYS * 24 * 60 * 60 * 1000,
-  );
-
   return {
     accessToken,
     refreshToken,
-    refreshExpiresAt,
     user: {
       id: user.id,
       email: user.email,
@@ -150,18 +159,13 @@ export async function rotateRefreshTokenService(oldRefreshToken) {
   const newRefreshToken = makeRefreshToken();
   await prisma.user.update({
     where: { id: user.id },
-    data: { refreshToken: newRefreshToken },
+    data: { refreshToken },
     select: { id: true },
   });
-
-  const refreshExpiresAt = new Date(
-    Date.now() + REFRESH_EXPIRES_DAYS * 24 * 60 * 60 * 1000,
-  );
 
   return {
     accessToken,
     refreshToken: newRefreshToken,
-    refreshExpiresAt,
     user: {
       id: user.id,
       email: user.email,

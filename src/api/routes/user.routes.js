@@ -116,8 +116,9 @@ router.post(
  *               email: { type: string, format: email, example: "hong@example.com" }
  *               password: { type: string, example: "Abcd1234" }
  *     responses:
- *       '200':
- *         description: 로그인 성공(액세스 토큰 반환, 리프레시 토큰은 httpOnly 쿠키)
+ *       '200': { description: 로그인 성공(액세스 토큰 반환, 리프레시 토큰은 httpOnly 쿠키) }
+ *       '400': { description: 유효성 검사 실패 }
+ *       '401': { description: 잘못된 자격 증명 }
  */
 router.post(
   '/login',
@@ -133,6 +134,7 @@ router.post(
  *     tags: [Users]
  *     responses:
  *       '200': { description: 재발급 성공 }
+ *       '401': { description: 리프레시 토큰 누락/무효 }
  */
 router.post('/refresh', errorMiddleware.asyncHandler(refreshTokenController));
 
