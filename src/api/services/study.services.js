@@ -34,25 +34,9 @@ async function serviceGetStudy(){
   }
 }
 
-/**
- * 스터디 목록을 검색·정렬·페이지네이션하여 반환한다.
- *
- * 지원 옵션: 오프셋(offset)·한도(limit, 최대 50) 기반 페이징, 이름 기준 대소문자 무시 부분일치(keyword) 검색,
- * 포인트 수 정렬(pointOrder: 'asc'|'desc'), 생성일 정렬(recentOrder: 'recent'|'oldest'), 활성 상태(isActive) 필터링.
- * 반환되는 각 스터디에는 상위 3개의 이모지(studyEmojis: count 및 emoji { id, symbol })와 포인트 값(points.value)이 포함된다.
- *
- * @param {Object} options - 조회 옵션
- * @param {number} options.offset - 조회 시작 인덱스(skip)
- * @param {number} options.limit - 한 번에 조회할 최대 개수(take, 내부적으로 최대 50으로 제한)
- * @param {string} [options.keyword] - name 필드에 대해 대소문자 구분 없이 부분 일치하는 검색어
- * @param {'asc'|'desc'} [options.pointOrder] - points(_count) 기준 정렬 방향
- * @param {'recent'|'oldest'} [options.recentOrder] - createdAt 기준 정렬 방식
- * @param {boolean} [options.isActive] - isActive 필터
- * @returns {{ studies: Array<Object>, totalCount: number }} 검색된 스터디 배열과 전체 개수
- */
 async function serviceStudyList(options) {
   const { offset, limit, keyword, pointOrder, recentOrder, isActive } = options;
-  const where = {
+  const studyWhere = {
     isActive: isActive,
     ...(keyword
       ? {
@@ -66,45 +50,67 @@ async function serviceStudyList(options) {
   };
 
   try {
-    const [studies, totalCount] = await Promise.all([
-      prisma.study.findMany({
-        where,
-        orderBy: [
-          {
-            points: {
-              _count: pointOrder === 'desc' ? 'desc' : 'asc',
-            },
-          },
-          { createdAt: recentOrder === 'recent' ? 'desc' : 'asc' },
-        ],
+      // 1) Point를 studyId로 groupBy: 최댓값(value) 기준 정렬 + 페이지네이션
+      const pointAgg = await prisma.point.groupBy({
+        by: ['studyId'],
+        where: { study: studyWhere },         // Point -> Study 역참조명: study
+        _max: { point: true },
+        orderBy: { _max: { point: pointOrder === 'asc' ? 'asc' : 'desc' } },
         skip: offset,
         take: Math.min(limit, 50),
+      });
+
+      const orderedIds = pointAgg.map(r => r.studyId);
+
+      // 2) 상세 Study 조회
+      const studiesRaw = await prisma.study.findMany({
+        where: { id: { in: orderedIds } },
         select: {
-          id: true,
-          nick: true,
-          name: true,
-          content: true,
-          img: true,
-          isActive: true,
-          createdAt: true,
-          updatedAt: true,
+          id: true, nick: true, name: true, content: true, img: true,
+          isActive: true, createdAt: true, updatedAt: true,
           studyEmojis: {
             orderBy: [{ count: 'desc' }, { emojiId: 'asc' }],
             take: 3,
-            select: {
-              count: true,
-              emoji: { select: { id: true, symbol: true } },
-            },
+            select: { count: true, emoji: { select: { id: true, symbol: true } } },
           },
-          points: {
-            select: { value: true },
-          },
+          // 필요 시 최소 필드만
+          points: { select: { value: true } },
         },
-      }),
-      prisma.study.count({ where }),
-    ]);
+      });
 
-    return { studies, totalCount };
+      // 원래 정렬 순서 유지 + createdAt 타이브레이크 적용(동점일 때)
+      const scoreByStudyId = new Map(pointAgg.map(r => [r.studyId, r._sum.value ?? 0]));
+      const mapById = new Map(studiesRaw.map(s => [s.id, s]));
+    orderedIds
+      .map(id => mapById.get(id))
+      .filter(Boolean)
+      .sort((a, b) => {
+        const va = scoreByStudyId.get(a.id) ?? 0;
+        const vb = scoreByStudyId.get(b.id) ?? 0;
+        if (va !== vb) return pointOrder === 'asc' ? va - vb : vb - va;
+        return recentOrder === 'recent'
+          ? new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          : new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      });
+
+    const totalCount = await prisma.study.count({ where: studyWhere });
+    const normalizedById = new Map(studiesRaw.map(study => [study.id, {
+        ...study,
+        // studyEmojis 구조 변환
+        studyEmojis: study.studyEmojis.map((e) => ({
+          id: e.emoji.id,
+          count: e.count,
+          symbol: e.emoji.symbol,
+        })),
+        // points 배열 → 합계 또는 0
+        points: (scoreByStudyId.get(study.id) ?? 0),
+      }]));
+
+      const studies = orderedIds
+        .map(id => normalizedById.get(id))
+        .filter(Boolean);
+
+      return { studies, totalCount };
   } catch (error) {
     console.log(error, '가 발생했습니다.');
     throw error;
@@ -414,69 +420,6 @@ async function serviceEmojiDecrement(studyId, emojiSymbol, emojiCount) {
   return { deleted: false, studyId: sid, emojiId: eid, count: 0, reason: 'race' };
 }
 
-async function serviceSetHabitHistory(studyId, habitName, date){
-  const habitId = await prisma.habit.findMany({
-    where: { habit: habitName },
-    select: { habitHistoryId: true },
-  });
-  const hid = habitId[0].habitHistoryId;
-
-  let done = {
-    mon: false,
-    tue: false,
-    wed: false,
-    thu: false,
-    fri: false,
-    sat: false,
-    sun: false,
-  };
-
-  switch (date) {
-    case "mon":
-      done.mon = true;
-      break;
-    case "tue":
-      done.tue = true;
-      break;
-    case "wed":
-      done.wed = true;
-      break;
-    case "thu":
-      done.thu = true;
-      break;
-    case "fri":
-      done.fri = true;
-      break;
-    case "sat":
-      done.sat = true;
-      break;
-    case "sun":
-      done.sun = true;
-      break;
-    default:
-      const err = new Error('유효하지 않은 날짜입니다.');
-      err.status = 400;
-      err.code = 'INVALID_DATE';
-      throw err;
-  }
-
-  const result = await prisma.habitHistory.update({
-    where: { id: hid },
-    data: {
-      monDone: done.mon,
-      tueDone: done.tue,
-      wedDone: done.wed,
-      thuDone: done.thu,
-      friDone: done.fri,
-      satDone: done.sat,
-      sunDone: done.sun,
-    },
-    include: { habits: true },
-  });
-
-  return result;
-}
-
 export default {
   serviceGetStudy,
   serviceStudyList,
@@ -487,6 +430,4 @@ export default {
 
   serviceEmojiIncrement,
   serviceEmojiDecrement,
-
-  serviceSetHabitHistory,
 };

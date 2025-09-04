@@ -1,20 +1,32 @@
 # 스터디 관련 API를 테스트하는 HTTP 요청 파일입니다.
 
-###
+# 공통 파라미터 설정
+@base_local = http://localhost:3000/api
+@base_prod = https://eight-studyforest-team2-be.onrender.com/api
+@studyId = 1
+@pwd = test
+# 조회 API를 위한 파라미터 설정
+@offset = 0
+@pointOrder = desc
+@recentOrder = recent
+@isActive = false
+@keyword = 시험
 
-GET http://localhost:3000/api/studies/manage
+### 1) [로컬] 스터디 관리 페이지 조회 (관리자용)
 
-###
+GET {{base_local}}/studies/manage
 
-GET https://eight-studyforest-team2-be.onrender.com/api/studies?offset=0&pointOrder=desc&recentOrder=recent
+### 2) [배포] 스터디 조회 API (offset, pointOrder, recentOrder, isActive, keyword)
 
-###
+GET {{base_prod}}/studies?offset={{offset}}&pointOrder={{pointOrder}}&recentOrder={{recentOrder}}&isActive={{isActive}}&keyword={{keyword}}
 
-GET http://localhost:3000/api/studies?offset=0&pointOrder=desc&recentOrder=recent&isActive=false&keyword=시험
+### 2) [로컬] 스터디 조회 API (offset, pointOrder, recentOrder, isActive, keyword)
 
-###
+GET {{base_local}}/studies?offset={{offset}}&pointOrder={{pointOrder}}&recentOrder={{recentOrder}}&isActive={{isActive}}&keyword={{keyword}}
 
-POST https://eight-studyforest-team2-be.onrender.com/api/studies
+### 3) [배포] 스터디 생성 API
+
+POST {{base_prod}}/studies
 Content-Type: application/json
 
 {
@@ -23,12 +35,13 @@ Content-Type: application/json
     "content": "스터디 생성 테스트 중 입니다.",
     "img": "https://avatars.githubusercontent.com/in/347564?s=60&v=4",
     "password": "1234",
+    "checkPassword": "1234",
     "isActive": true
 }
 
-###
+### 3) [로컬] 스터디 생성 API
 
-POST http://localhost:3000/api/studies
+POST {{base_local}}/studies
 Content-Type: application/json
 
 {
@@ -37,12 +50,13 @@ Content-Type: application/json
     "content": "스터디 생성 테스트 중 입니다.",
     "img": "https://avatars.githubusercontent.com/in/347564?s=60&v=4",
     "password": "1234",
+    "checkPassword": "1234",
     "isActive": true
 }
 
-###
+### 4) [배포] 스터디 수정 API
 
-PATCH https://eight-studyforest-team2-be.onrender.com/api/studies/30
+PATCH {{base_prod}}/studies/{{studyId}}
 Content-Type: application/json
 
 {
@@ -54,9 +68,9 @@ Content-Type: application/json
     "isActive": true
 }
 
-###
+### 4) [로컬] 스터디 수정 API
 
-PATCH http://localhost:3000/api/studies/30
+PATCH {{base_local}}/studies/{{studyId}}
 Content-Type: application/json
 
 {
@@ -68,35 +82,35 @@ Content-Type: application/json
     "isActive": true
 }
 
-###
+### 5) [배포] 스터디 삭제 API
 
-DELETE https://eight-studyforest-team2-be.onrender.com/api/studies/6
+DELETE {{base_prod}}/studies/{{studyId}}
 Content-Type: application/json
 
 {
   "password": "1234"
 }
 
-###
+### 5) [로컬] 스터디 삭제 API
 
-DELETE http://localhost:3000/api/studies/25
+DELETE {{base_local}}/studies/{{studyId}}
 Content-Type: application/json
 
 {
   "password": "1234"
 }
 
-###
+### 6) [배포] 스터디 단일 조회 API
 
-GET https://eight-studyforest-team2-be.onrender.com/api/studies/1
+GET {{base_prod}}/studies/{{studyId}}
 
-###
+### 6) [로컬] 스터디 단일 조회 API
 
-GET http://localhost:3000/api/studies/22
+GET {{base_local}}/studies/{{studyId}}
 
-###
+### 7) [로컬] 이모지 횟수 증가 API
 
-POST http://localhost:3000/api/studies/28/emojis/increment
+POST {{base_local}}/studies/{{studyId}}/emojis/increment
 Content-Type: application/json
 
 {
@@ -105,9 +119,9 @@ Content-Type: application/json
     "count": 1
 }
 
-###
+### 8) [로컬] 이모지 횟수 감소 API
 
-POST http://localhost:3000/api/studies/28/emojis/decrement
+POST {{base_local}}/studies/{{studyId}}/emojis/decrement
 Content-Type: application/json
 
 {
@@ -115,7 +129,3 @@ Content-Type: application/json
     "emoji": "😃",
     "count": 1
 }
-
-###
-
-POST http://localhost:3000/api/studies/30/habit-history?habitName=1&date=mon

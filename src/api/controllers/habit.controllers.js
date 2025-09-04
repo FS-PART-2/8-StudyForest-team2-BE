@@ -7,6 +7,7 @@ import getTodayHabitsService, {
   renameTodayHabitService,
   deleteTodayHabitService,
   addTodayHabitService,
+  setHabitHistoryService,
 } from '../services/habit.services.js';
 function parsePositiveParam(req, name) {
   const raw = req.params?.[name];
@@ -259,16 +260,6 @@ async function addTodayHabitController(req, res) {
 }
 
 export {
-  getTodayHabitsController,
-  createTodayHabitsController,
-  toggleHabitController,
-  getWeekHabitsController,
-  renameTodayHabitController,
-  deleteTodayHabitController,
-  addTodayHabitController,
-};
-
-export default {
   getTodayHabitsController,
   createTodayHabitsController,
   toggleHabitController,
