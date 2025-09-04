@@ -125,7 +125,6 @@ export async function loginUserService({ email, password, userAgent, ip }) {
   return {
     accessToken,
     refreshToken,
-    refreshExpiresAt,
     user: {
       id: user.id,
       email: user.email,
