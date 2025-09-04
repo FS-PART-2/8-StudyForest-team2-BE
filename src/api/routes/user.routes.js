@@ -1,17 +1,27 @@
 import express from 'express';
-import { validateRegister } from '../checkValidation.js';
-import { registerController } from '../controllers/user.controllers.js';
+import { validateRegister, validateLogin } from '../checkValidation.js';
+import {
+  registerController,
+  loginController,
+  refreshTokenController,
+  logoutController,
+} from '../controllers/user.controllers.js';
+
 import coreMiddleware from '../../../src/common/cors.js';
 import errorMiddleware from '../../../src/common/error.js'; // 에러 케이스 추가는 이 파일에서 관리
 
 const router = express.Router();
 router.use(coreMiddleware); // CORS 미들웨어 적용
+
 /**
  * @swagger
  * tags:
  *   name: Users
  *   description: 회원 관련 API
- *
+ */
+
+/**
+ * @swagger
  * /users/register:
  *   post:
  *     summary: 회원 가입
@@ -88,12 +98,55 @@ router.post(
   validateRegister,
   errorMiddleware.asyncHandler(registerController),
 );
-// // 로그인
-// router.post('/login', validateLogin, userController.login);
-//
-// // 로그아웃 (인증 필요)
-// router.post('/logout', authenticateToken, userController.logout);
-//
+
+/**
+ * @swagger
+ * /users/login:
+ *   post:
+ *     summary: 로그인
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password]
+ *             properties:
+ *               email: { type: string, format: email, example: "hong@example.com" }
+ *               password: { type: string, example: "Abcd1234" }
+ *     responses:
+ *       '200':
+ *         description: 로그인 성공(액세스 토큰 반환, 리프레시 토큰은 httpOnly 쿠키)
+ */
+router.post(
+  '/login',
+  validateLogin,
+  errorMiddleware.asyncHandler(loginController),
+);
+
+/**
+ * @swagger
+ * /users/refresh:
+ *   post:
+ *     summary: 액세스 토큰 재발급(리프레시 토큰 필요)
+ *     tags: [Users]
+ *     responses:
+ *       '200': { description: 재발급 성공 }
+ */
+router.post('/refresh', errorMiddleware.asyncHandler(refreshTokenController));
+
+/**
+ * @swagger
+ * /users/logout:
+ *   post:
+ *     summary: 로그아웃(리프레시 토큰 무효화)
+ *     tags: [Users]
+ *     responses:
+ *       '200': { description: 로그아웃 성공 }
+ */
+router.post('/logout', errorMiddleware.asyncHandler(logoutController));
+
 // // 프로필 조회 (인증 필요)
 // router.get('/profile', authenticateToken, userController.getProfile);
 //
