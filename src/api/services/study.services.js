@@ -34,7 +34,22 @@ async function serviceGetStudy(){
   }
 }
 
-// 스터디 목록 조회 API 서비스
+/**
+ * 스터디 목록을 검색·정렬·페이지네이션하여 반환한다.
+ *
+ * 지원 옵션: 오프셋(offset)·한도(limit, 최대 50) 기반 페이징, 이름 기준 대소문자 무시 부분일치(keyword) 검색,
+ * 포인트 수 정렬(pointOrder: 'asc'|'desc'), 생성일 정렬(recentOrder: 'recent'|'oldest'), 활성 상태(isActive) 필터링.
+ * 반환되는 각 스터디에는 상위 3개의 이모지(studyEmojis: count 및 emoji { id, symbol })와 포인트 값(points.value)이 포함된다.
+ *
+ * @param {Object} options - 조회 옵션
+ * @param {number} options.offset - 조회 시작 인덱스(skip)
+ * @param {number} options.limit - 한 번에 조회할 최대 개수(take, 내부적으로 최대 50으로 제한)
+ * @param {string} [options.keyword] - name 필드에 대해 대소문자 구분 없이 부분 일치하는 검색어
+ * @param {'asc'|'desc'} [options.pointOrder] - points(_count) 기준 정렬 방향
+ * @param {'recent'|'oldest'} [options.recentOrder] - createdAt 기준 정렬 방식
+ * @param {boolean} [options.isActive] - isActive 필터
+ * @returns {{ studies: Array<Object>, totalCount: number }} 검색된 스터디 배열과 전체 개수
+ */
 async function serviceStudyList(options) {
   const { offset, limit, keyword, pointOrder, recentOrder, isActive } = options;
   const where = {
@@ -72,13 +87,17 @@ async function serviceStudyList(options) {
           isActive: true,
           createdAt: true,
           updatedAt: true,
-          _count: {
+          studyEmojis: {
+            orderBy: [{ count: 'desc' }, { emojiId: 'asc' }],
+            take: 3,
             select: {
-              points: true,
-              habitHistories: true,
-              focuses: true,
-              studyEmojis: true,
+              count: true,
+              // 아래는 예시: 실제 StudyEmoji 스키마에 맞춰 조정하세요.
+              emoji: { select: { id: true, symbol: true } },
             },
+          },
+          points: {
+            select: { value: true },
           },
         },
       }),
