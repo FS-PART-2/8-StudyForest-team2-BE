@@ -127,10 +127,3 @@ Content-Type: application/json
     "emoji": "😃",
     "count": 1
 }
-
-### 9) [로컬] 스터디 요일별 습관 수정 API
-
-@habitName = '1';
-@day = 'mon';
-
-POST {{base_local}}/studies/{{studyId}}/habit-history?habitName={{habitName}}&date={{day}}

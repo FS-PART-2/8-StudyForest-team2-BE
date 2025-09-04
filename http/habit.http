@@ -44,3 +44,10 @@ x-study-password: {{pwd}}
 {
   "title": "단어 100개"
 }
+
+### 7) 오늘의 습관 요일별 습관 변경
+
+@habitName = '1';
+@day = 'mon';
+
+POST {{base}}/studies/{{studyId}}/habit-history?habitName={{habitName}}&date={{day}}
