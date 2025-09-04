@@ -35,6 +35,7 @@ Content-Type: application/json
     "content": "스터디 생성 테스트 중 입니다.",
     "img": "https://avatars.githubusercontent.com/in/347564?s=60&v=4",
     "password": "1234",
+    "checkPassword": "1234",
     "isActive": true
 }
 
@@ -49,6 +50,7 @@ Content-Type: application/json
     "content": "스터디 생성 테스트 중 입니다.",
     "img": "https://avatars.githubusercontent.com/in/347564?s=60&v=4",
     "password": "1234",
+    "checkPassword": "1234",
     "isActive": true
 }
 
