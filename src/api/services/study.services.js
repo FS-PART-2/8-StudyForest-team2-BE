@@ -50,9 +50,6 @@ async function serviceStudyList(options) {
   };
 
   try {
-    const studyPoint = prisma.point.findFirst({
-      where: { studyId: 1 },
-    });
     const [studies, totalCount] = await Promise.all([
       prisma.study.findMany({
         where,
@@ -76,7 +73,7 @@ async function serviceStudyList(options) {
           createdAt: true,
           updatedAt: true,
           studyEmojis: {
-            orderBy: { count: 'desc' },
+            orderBy: [{ count: 'desc' }, { emojiId: 'asc' }],
             take: 3,
             select: {
               count: true,
