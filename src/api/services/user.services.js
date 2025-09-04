@@ -82,6 +82,9 @@ export async function createUserService({ email, password, username, nick }) {
     throw e;
   }
 }
+function hashToken(token) {
+  return crypto.createHash('sha256').update(token, 'utf8').digest('hex');
+}
 function signAccessToken(payload) {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: ACCESS_EXPIRES_IN });
 }
@@ -113,12 +116,13 @@ export async function loginUserService({ email, password, userAgent, ip }) {
 
   // 리프레시 토큰(문자열) 발급 + DB 저장(유니크 컬럼)
   const refreshToken = makeRefreshToken();
+  const refreshTokenHash = hashToken(refreshToken);
 
   // 기존 토큰 한 개 정책: 유저당 1개만 유지하고 싶다면 refreshToken을 덮어쓰기
   // 여러 기기 허용 정책이면 UserRefreshToken 테이블로 확장 권장
   await prisma.user.update({
     where: { id: user.id },
-    data: { refreshToken },
+    data: { refreshToken: refreshTokenHash },
     select: { id: true },
   });
 
@@ -192,7 +196,7 @@ export async function logoutUserService(refreshToken) {
   // 해당 토큰을 가진 유저만 로그아웃 처리(덮어쓰기)
   await prisma.user.updateMany({
     where: { refreshToken },
-    data: { refreshToken: null },
+    data: { refreshToken: null, refreshTokenExpiresAt: null },
   });
 }
 //   // 사용자 로그인
