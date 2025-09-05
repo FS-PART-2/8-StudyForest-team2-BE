@@ -5,6 +5,19 @@ import {
   rotateRefreshTokenService,
   logoutUserService,
 } from '../services/user.services.js';
+
+// 공용 쿠키 옵션 계산
+function getRefreshCookieOptions() {
+  const days = Number(process.env.REFRESH_EXPIRES_DAYS ?? 7);
+  const maxAgeMs = days * 24 * 60 * 60 * 1000;
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: maxAgeMs,
+  };
+}
 // 회원가입
 export async function registerController(req, res, next) {
   const result = validationResult(req);
@@ -42,25 +55,21 @@ export async function loginController(req, res) {
   const { email, password } = req.body;
   const ua = req.get('User-Agent') || '';
   const ip = req.ip;
+  const { accessToken, refreshToken, user } = await loginUserService({
+    email,
+    password,
+    userAgent: ua,
+    ip,
+  });
 
-  const { accessToken, refreshToken, refreshExpiresAt, user } =
-    await loginUserService({ email, password, userAgent: ua, ip });
-
-  res
-    .cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      expires: refreshExpiresAt,
-    })
-    .json({
-      success: true,
-      message: '로그인이 완료되었습니다.',
-      data: {
-        accessToken,
-        user,
-      },
-    });
+  res.cookie('refreshToken', refreshToken, getRefreshCookieOptions()).json({
+    success: true,
+    message: '로그인이 완료되었습니다.',
+    data: {
+      accessToken,
+      user,
+    },
+  });
 }
 // 액세스 토큰 재발급
 export async function refreshTokenController(req, res) {
@@ -72,22 +81,14 @@ export async function refreshTokenController(req, res) {
     throw err;
   }
 
-  const { accessToken, refreshToken, refreshExpiresAt, user } =
+  const { accessToken, refreshToken, user } =
     await rotateRefreshTokenService(token);
 
-  res
-    .cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      expires: refreshExpiresAt,
-    })
-    .json({
-      success: true,
-      message: '토큰이 재발급되었습니다.',
-      data: { accessToken, user },
-    });
+  res.cookie('refreshToken', refreshToken, getRefreshCookieOptions()).json({
+    success: true,
+    message: '토큰이 재발급되었습니다.',
+    data: { accessToken, user },
+  });
 }
 // 로그아웃
 export async function logoutController(req, res) {
@@ -101,6 +102,7 @@ export async function logoutController(req, res) {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
+    path: '/',
   });
 
   res.json({

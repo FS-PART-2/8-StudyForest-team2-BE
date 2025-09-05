@@ -115,7 +115,6 @@ export async function loginUserService({ email, password, userAgent, ip }) {
   const refreshToken = makeRefreshToken();
 
   // 기존 토큰 한 개 정책: 유저당 1개만 유지하고 싶다면 refreshToken을 덮어쓰기
-  // 여러 기기 허용 정책이면 UserRefreshToken 테이블로 확장 권장
   await prisma.user.update({
     where: { id: user.id },
     data: { refreshToken },
@@ -157,9 +156,10 @@ export async function rotateRefreshTokenService(oldRefreshToken) {
   // 새 액세스/리프레시 발급
   const accessToken = signAccessToken({ userId: user.id, email: user.email });
   const newRefreshToken = makeRefreshToken();
+
   await prisma.user.update({
     where: { id: user.id },
-    data: { refreshToken },
+    data: { refreshToken: newRefreshToken },
     select: { id: true },
   });
 

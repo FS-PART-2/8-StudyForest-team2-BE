@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import express from 'express';
 import morgan from 'morgan';
+
 import studyRoutes from '../src/api/routes/study.routes.js';
 import habitRoutes from '../src/api/routes/habit.routes.js';
 import userRoutes from '../src/api/routes/user.routes.js';
@@ -25,7 +26,7 @@ const app = express();
 app.use(express.json({ limit: '1mb' })); // JSON 파싱 미들웨어 추가
 app.use(express.urlencoded({ limit: '1mb', extended: true }));
 app.use(morgan('combined'));
-
+app.use(cookieParser());
 // API 라우트 설정
 app.get('/', (req, res) => {
   res.send('MindMeld API 연결 성공');
@@ -33,7 +34,6 @@ app.get('/', (req, res) => {
 app.use('/api/studies', studyRoutes);
 app.use('/api', habitRoutes);
 app.use('/api/users', userRoutes);
-app.use(cookieParser());
 
 // Swagger 문서
 swaggerDocs(app);
