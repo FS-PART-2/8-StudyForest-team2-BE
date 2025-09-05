@@ -1,9 +1,12 @@
+import argon2 from 'argon2';
 import { validationResult } from 'express-validator';
 import {
   createUserService,
   loginUserService,
   rotateRefreshTokenService,
   logoutUserService,
+  getMyProfileService,
+  updateMyProfileService,
 } from '../services/user.services.js';
 
 // 공용 쿠키 옵션 계산
@@ -81,7 +84,7 @@ export async function refreshTokenController(req, res) {
     throw err;
   }
 
-  const { accessToken, refreshToken, refreshExpiresAt, user } =
+  const { accessToken, refreshToken, user } =
     await rotateRefreshTokenService(token);
 
   res
@@ -118,18 +121,82 @@ export async function logoutController(req, res) {
     message: '로그아웃이 완료되었습니다.',
   });
 }
-//   // 프로필 조회
-//   async getProfile(req, res, next) {
-//     try {
-//       const userId = req.user.id;
-//       const user = await userService.getUserById(userId);
-//
-//       res.json({
-//         success: true,
-//         data: user,
-//       });
-//     } catch (error) {
-//       next(error);
-//     }
-//   },
-// };
+// 내 프로필 조회
+export async function getMeController(req, res) {
+  // authenticateToken 미들웨어가 req.user(userId 등)를 채워준다고 가정
+  const userId = req.user?.userId || req.user?.id;
+  if (!userId) {
+    const err = new Error('인증이 필요합니다.');
+    err.status = 401;
+    err.code = 'UNAUTHORIZED';
+    throw err;
+  }
+
+  const user = await getMyProfileService(userId);
+  res.json({
+    success: true,
+    data: user,
+  });
+}
+
+// 내 프로필 수정
+export async function updateMeController(req, res) {
+  const userId = req.user?.userId || req.user?.id;
+  if (!userId) {
+    const err = new Error('인증이 필요합니다.');
+    err.status = 401;
+    err.code = 'UNAUTHORIZED';
+    throw err;
+  }
+
+  // 검증 에러 처리(기존 패턴 유지)
+  const { validationResult } = await import('express-validator');
+  const result = validationResult(req);
+  if (!result.isEmpty()) {
+    const err = new Error('입력 데이터가 유효하지 않습니다.');
+    err.status = 400;
+    err.code = 'VALIDATION_ERROR';
+    err.details = result
+      .array({ onlyFirstError: true })
+      .map(({ msg, param, location }) => ({ msg, param, location }));
+    throw err;
+  }
+
+  const {
+    nick,
+    username,
+    email,
+    currentPassword, // 비밀번호 변경 시 필요
+    newPassword, // 비밀번호 변경 시 필요
+  } = req.body;
+
+  // 둘 다 있으면 비번 변경, 둘 다 없으면 비번 유지
+  let newPasswordHash = undefined;
+  if ((currentPassword && !newPassword) || (!currentPassword && newPassword)) {
+    const err = new Error(
+      '비밀번호 변경 시 currentPassword와 newPassword가 모두 필요합니다.',
+    );
+    err.status = 400;
+    err.code = 'PASSWORD_CHANGE_BAD_REQUEST';
+    throw err;
+  }
+  if (currentPassword && newPassword) {
+    // 서비스에서 현재 비밀번호 검증도 하지만, 여기서도 간단 체크 가능
+    // 본 검증은 서비스에서 최종 수행
+    newPasswordHash = await argon2.hash(newPassword);
+  }
+
+  const updated = await updateMyProfileService(userId, {
+    nick,
+    username,
+    email,
+    currentPassword,
+    newPasswordHash,
+  });
+
+  res.json({
+    success: true,
+    message: '프로필이 업데이트되었습니다.',
+    data: updated,
+  });
+}

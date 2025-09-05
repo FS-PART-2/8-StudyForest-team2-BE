@@ -1,30 +1,34 @@
+// src/api/services/user.services.js
 import { PrismaClient, Prisma } from '@prisma/client';
 import argon2 from 'argon2';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+
 const prisma = new PrismaClient();
 
-// 필수: JWT_SECRET 미설정 시 즉시 실패
 const {
   JWT_SECRET,
-  ACCESS_EXPIRES_IN = '1h',
-  REFRESH_EXPIRES_DAYS: REFRESH_EXPIRES_DAYS_RAW = '7',
+  ACCESS_EXPIRES_IN = '1h', // 환경변수로 조정 가능
 } = process.env;
+
 if (!JWT_SECRET) {
   throw Object.assign(new Error('JWT_SECRET is required'), {
     status: 500,
     code: 'MISSING_JWT_SECRET',
   });
 }
-const REFRESH_EXPIRES_DAYS = Number(REFRESH_EXPIRES_DAYS_RAW);
-if (!Number.isFinite(REFRESH_EXPIRES_DAYS) || REFRESH_EXPIRES_DAYS <= 0) {
-  throw Object.assign(
-    new Error('REFRESH_EXPIRES_DAYS must be a positive number'),
-    { status: 500, code: 'INVALID_REFRESH_EXPIRES' },
-  );
+
+function signAccessToken(payload) {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: ACCESS_EXPIRES_IN });
 }
+
+function makeRefreshToken() {
+  // 고엔트로피 랜덤 문자열(문자열 기반 RT 정책)
+  return crypto.randomBytes(48).toString('hex');
+}
+
 export async function createUserService({ email, password, username, nick }) {
-  // 중복 이메일/username 체크
+  // 중복 체크
   const [emailExists, usernameExists] = await Promise.all([
     prisma.user.findUnique({ where: { email } }),
     prisma.user.findUnique({ where: { username } }),
@@ -82,16 +86,11 @@ export async function createUserService({ email, password, username, nick }) {
     throw e;
   }
 }
-function signAccessToken(payload) {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: ACCESS_EXPIRES_IN });
-}
 
-function makeRefreshToken() {
-  // 임의의 고Entropy 토큰(순수 문자열). 필요 시 JWT로 바꿔도 OK.
-  return crypto.randomBytes(48).toString('hex');
-}
-
-export async function loginUserService({ email, password, userAgent, ip }) {
+export async function loginUserService({
+  email,
+  password /* userAgent, ip */,
+}) {
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) {
     const err = new Error('이메일 또는 비밀번호가 올바르지 않습니다.');
@@ -114,7 +113,7 @@ export async function loginUserService({ email, password, userAgent, ip }) {
   // 리프레시 토큰(문자열) 발급 + DB 저장(유니크 컬럼)
   const refreshToken = makeRefreshToken();
 
-  // 기존 토큰 한 개 정책: 유저당 1개만 유지하고 싶다면 refreshToken을 덮어쓰기
+  // 1유저-1토큰 정책: 덮어쓰기
   await prisma.user.update({
     where: { id: user.id },
     data: { refreshToken },
@@ -153,7 +152,6 @@ export async function rotateRefreshTokenService(oldRefreshToken) {
     throw err;
   }
 
-  // 새 액세스/리프레시 발급
   const accessToken = signAccessToken({ userId: user.id, email: user.email });
   const newRefreshToken = makeRefreshToken();
 
@@ -179,68 +177,107 @@ export async function rotateRefreshTokenService(oldRefreshToken) {
 
 export async function logoutUserService(refreshToken) {
   if (!refreshToken) return;
-  // 해당 토큰을 가진 유저만 로그아웃 처리(덮어쓰기)
   await prisma.user.updateMany({
     where: { refreshToken },
     data: { refreshToken: null },
   });
 }
-//   // 사용자 로그인
-//   async loginUser({ email, password }) {
-//     const user = await prisma.user.findUnique({ where: { email } });
-//     if (!user) {
-//       throw createError(401, '이메일 또는 비밀번호가 올바르지 않습니다.');
-//     }
-//
-//     const isValidPassword = await bcrypt.compare(password, user.password);
-//     if (!isValidPassword) {
-//       throw createError(401, '이메일 또는 비밀번호가 올바르지 않습니다.');
-//     }
-//
-//     const token = jwt.sign(
-//       { userId: user.id, email: user.email },
-//       process.env.JWT_SECRET,
-//       { expiresIn: '24h' },
-//     );
-//
-//     return {
-//       token,
-//       user: {
-//         id: user.id,
-//         email: user.email,
-//         name: user.name,
-//       },
-//     };
-//   },
-//
-//   // 사용자 로그아웃 (토큰 블랙리스트)
-//   async logoutUser(token) {
-//     if (token) {
-//       await prisma.blacklistedToken.create({
-//         data: { token },
-//       });
-//     }
-//   },
-//
-//   // 사용자 조회
-//   async getUserById(userId) {
-//     const user = await prisma.user.findUnique({
-//       where: { id: userId },
-//       select: {
-//         id: true,
-//         email: true,
-//         name: true,
-//         createdAt: true,
-//         updatedAt: true,
-//       },
-//     });
-//
-//     if (!user) {
-//       throw createError(404, '사용자를 찾을 수 없습니다.');
-//     }
-//
-//     return user;
-//   },
-// };
-//
-// module.exports = userService;
+
+export async function getMyProfileService(userId) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      email: true,
+      username: true,
+      nick: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+  if (!user) {
+    const err = new Error('사용자를 찾을 수 없습니다.');
+    err.status = 404;
+    err.code = 'USER_NOT_FOUND';
+    throw err;
+  }
+  return user;
+}
+
+export async function updateMyProfileService(
+  userId,
+  { nick, username, email, currentPassword, newPasswordHash },
+) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, password: true },
+  });
+  if (!user) {
+    const err = new Error('사용자를 찾을 수 없습니다.');
+    err.status = 404;
+    err.code = 'USER_NOT_FOUND';
+    throw err;
+  }
+
+  // 비번 변경 요청 시 현재 비번 검증
+  if (currentPassword && newPasswordHash) {
+    const ok = await argon2.verify(user.password, currentPassword);
+    if (!ok) {
+      const err = new Error('현재 비밀번호가 올바르지 않습니다.');
+      err.status = 400;
+      err.code = 'CURRENT_PASSWORD_INVALID';
+      throw err;
+    }
+  }
+
+  const data = {};
+  if (typeof nick === 'string') data.nick = nick;
+  if (typeof username === 'string') data.username = username;
+  if (typeof email === 'string') data.email = email;
+  if (newPasswordHash) data.password = newPasswordHash;
+
+  if (Object.keys(data).length === 0) {
+    const err = new Error('변경할 필드가 없습니다.');
+    err.status = 400;
+    err.code = 'NO_FIELDS_TO_UPDATE';
+    throw err;
+  }
+
+  try {
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data,
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        nick: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+    return updated;
+  } catch (e) {
+    if (
+      e instanceof Prisma.PrismaClientKnownRequestError &&
+      e.code === 'P2002'
+    ) {
+      const target = Array.isArray(e.meta?.target)
+        ? e.meta.target.join(',')
+        : String(e.meta?.target ?? '');
+      if (target.includes('email')) {
+        const err = new Error('이미 사용 중인 이메일입니다.');
+        err.status = 409;
+        err.code = 'DUPLICATE_EMAIL';
+        throw err;
+      }
+      if (target.includes('username')) {
+        const err = new Error('이미 사용 중인 사용자명(username)입니다.');
+        err.status = 409;
+        err.code = 'DUPLICATE_USERNAME';
+        throw err;
+      }
+    }
+    throw e;
+  }
+}

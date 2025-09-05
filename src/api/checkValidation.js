@@ -1,3 +1,4 @@
+// src/api/checkValidation.js
 import { body } from 'express-validator';
 
 export const validateRegister = [
@@ -24,6 +25,7 @@ export const validateRegister = [
     .matches(/^[\p{L}\p{N}_\s]+$/u)
     .withMessage('닉네임은 글자/숫자/언더바/공백만 허용됩니다.'),
 ];
+
 export const validateLogin = [
   body('email')
     .isEmail()
@@ -32,4 +34,40 @@ export const validateLogin = [
   body('password')
     .isLength({ min: 8, max: 16 })
     .withMessage('비밀번호는 8자 이상 16자 이하여야 합니다.'),
+];
+
+export const validateUpdateMe = [
+  body('nick')
+    .optional()
+    .isString()
+    .isLength({ min: 1, max: 30 })
+    .withMessage('nick은 1~30자여야 합니다.'),
+
+  body('username')
+    .optional()
+    .isString()
+    .isLength({ min: 3, max: 20 })
+    .withMessage('username은 3~20자여야 합니다.')
+    .matches(/^[a-zA-Z0-9_]+$/)
+    .withMessage('username은 영문/숫자/_ 만 사용할 수 있습니다.'),
+
+  body('email')
+    .optional()
+    .isEmail()
+    .withMessage('유효한 이메일을 입력해주세요.')
+    .normalizeEmail(),
+
+  body('currentPassword')
+    .optional()
+    .isString()
+    .isLength({ min: 8, max: 16 })
+    .withMessage('currentPassword는 8~16자여야 합니다.'),
+
+  body('newPassword')
+    .optional()
+    .isString()
+    .isLength({ min: 8, max: 16 })
+    .withMessage('newPassword는 8~16자여야 합니다.')
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/)
+    .withMessage('newPassword는 대/소문자와 숫자를 포함해야 합니다.'),
 ];
