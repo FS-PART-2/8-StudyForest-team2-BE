@@ -39,15 +39,17 @@ export const validateLogin = [
 export const validateUpdateMe = [
   body('nick')
     .optional()
-    .isString()
-    .isLength({ min: 1, max: 30 })
-    .withMessage('nick은 1~30자여야 합니다.'),
+    .trim()
+    .isLength({ min: 2, max: 50 })
+    .withMessage('닉네임은 2~50자여야 합니다.')
+    .matches(/^[\p{L}\p{N}_\s]+$/u)
+    .withMessage('닉네임은 글자/숫자/언더바/공백만 허용됩니다.'),
 
   body('username')
     .optional()
-    .isString()
-    .isLength({ min: 3, max: 20 })
-    .withMessage('username은 3~20자여야 합니다.')
+    .trim()
+    .isLength({ min: 2, max: 50 })
+    .withMessage('username은 2~50자여야 합니다.')
     .matches(/^[a-zA-Z0-9_]+$/)
     .withMessage('username은 영문/숫자/_ 만 사용할 수 있습니다.'),
 
