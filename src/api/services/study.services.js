@@ -6,7 +6,7 @@ import argon2 from 'argon2';
 const prisma = new PrismaClient();
 
 // 관리를 위한 전체 스터디 목록 조회 API 서비스
-async function serviceGetStudy(){
+async function serviceGetStudy() {
   try {
     return await prisma.study.findMany({
       orderBy: { createdAt: 'desc' },
@@ -50,37 +50,48 @@ async function serviceStudyList(options) {
   };
 
   try {
-      // 1) Point를 studyId로 groupBy: 최댓값(value) 기준 정렬 + 페이지네이션
-      const pointAgg = await prisma.point.groupBy({
-        by: ['studyId'],
-        where: { study: studyWhere },         // Point -> Study 역참조명: study
-        _max: { point: true },
-        orderBy: { _max: { point: pointOrder === 'asc' ? 'asc' : 'desc' } },
-        skip: offset,
-        take: Math.min(limit, 50),
-      });
+    // 1) Point를 studyId로 groupBy: 최댓값(value) 기준 정렬 + 페이지네이션
+    const pointAgg = await prisma.point.groupBy({
+      by: ['studyId'],
+      where: { study: studyWhere }, // Point -> Study 역참조명: study
+      _max: { point: true },
+      orderBy: { _max: { point: pointOrder === 'asc' ? 'asc' : 'desc' } },
+      skip: offset,
+      take: Math.min(limit, 50),
+    });
 
-      const orderedIds = pointAgg.map(r => r.studyId);
+    const orderedIds = pointAgg.map(r => r.studyId);
 
-      // 2) 상세 Study 조회
-      const studiesRaw = await prisma.study.findMany({
-        where: { id: { in: orderedIds } },
-        select: {
-          id: true, nick: true, name: true, content: true, img: true,
-          isActive: true, createdAt: true, updatedAt: true,
-          studyEmojis: {
-            orderBy: [{ count: 'desc' }, { emojiId: 'asc' }],
-            take: 3,
-            select: { count: true, emoji: { select: { id: true, symbol: true } } },
+    // 2) 상세 Study 조회
+    const studiesRaw = await prisma.study.findMany({
+      where: { id: { in: orderedIds } },
+      select: {
+        id: true,
+        nick: true,
+        name: true,
+        content: true,
+        img: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        studyEmojis: {
+          orderBy: [{ count: 'desc' }, { emojiId: 'asc' }],
+          take: 3,
+          select: {
+            count: true,
+            emoji: { select: { id: true, symbol: true } },
           },
-          // 필요 시 최소 필드만
-          points: { select: { value: true } },
         },
-      });
+        // 필요 시 최소 필드만
+        points: { select: { value: true } },
+      },
+    });
 
-      // 원래 정렬 순서 유지 + createdAt 타이브레이크 적용(동점일 때)
-      const scoreByStudyId = new Map(pointAgg.map(r => [r.studyId, r._sum.value ?? 0]));
-      const mapById = new Map(studiesRaw.map(s => [s.id, s]));
+    // 원래 정렬 순서 유지 + createdAt 타이브레이크 적용(동점일 때)
+    const scoreByStudyId = new Map(
+      pointAgg.map(r => [r.studyId, r._max.value ?? 0]),
+    );
+    const mapById = new Map(studiesRaw.map(s => [s.id, s]));
     orderedIds
       .map(id => mapById.get(id))
       .filter(Boolean)
@@ -94,23 +105,28 @@ async function serviceStudyList(options) {
       });
 
     const totalCount = await prisma.study.count({ where: studyWhere });
-    const normalizedById = new Map(studiesRaw.map(study => [study.id, {
-        ...study,
-        // studyEmojis 구조 변환
-        studyEmojis: study.studyEmojis.map((e) => ({
-          id: e.emoji.id,
-          count: e.count,
-          symbol: e.emoji.symbol,
-        })),
-        // points 배열 → 합계 또는 0
-        points: (scoreByStudyId.get(study.id) ?? 0),
-      }]));
+    const normalizedById = new Map(
+      studiesRaw.map(study => [
+        study.id,
+        {
+          ...study,
+          // studyEmojis 구조 변환
+          studyEmojis: study.studyEmojis.map(e => ({
+            id: e.emoji.id,
+            count: e.count,
+            symbol: e.emoji.symbol,
+          })),
+          // points 배열 → 합계 또는 0
+          points: scoreByStudyId.get(study.id) ?? 0,
+        },
+      ]),
+    );
 
-      const studies = orderedIds
-        .map(id => normalizedById.get(id))
-        .filter(Boolean);
+    const studies = orderedIds
+      .map(id => normalizedById.get(id))
+      .filter(Boolean);
 
-      return { studies, totalCount };
+    return { studies, totalCount };
   } catch (error) {
     console.log(error, '가 발생했습니다.');
     throw error;
@@ -153,7 +169,7 @@ async function serviceStudyUpdate(
   img,
   password,
   isActive,
-){
+) {
   try {
     // studyId에 해당하는 스터디의 해시된 비밀번호를 DB에서 조회
     const study = await prisma.study.findUnique({
@@ -354,7 +370,9 @@ async function serviceEmojiIncrement(studyId, emojiSymbol, emojiCount) {
     }
     if (err.code === 'P2003') {
       // FK 위반: Study가 실제로 존재하는지 확인 필요
-      const e = new Error(`FK 위반(P2003): Study(${sid}) 또는 Emoji(${eid})가 존재하지 않습니다.`);
+      const e = new Error(
+        `FK 위반(P2003): Study(${sid}) 또는 Emoji(${eid})가 존재하지 않습니다.`,
+      );
       e.code = 'FK_VIOLATION';
       throw e;
     }
@@ -378,7 +396,13 @@ async function serviceEmojiDecrement(studyId, emojiSymbol, emojiCount) {
 
   // 이모지 자체가 없으면 감소할 대상이 없으므로 종료
   if (!emoji) {
-    return { deleted: false, studyId: sid, emojiId: null, count: 0, reason: 'emoji-not-found' };
+    return {
+      deleted: false,
+      studyId: sid,
+      emojiId: null,
+      count: 0,
+      reason: 'emoji-not-found',
+    };
   }
 
   const eid = emoji.id;
@@ -404,7 +428,13 @@ async function serviceEmojiDecrement(studyId, emojiSymbol, emojiCount) {
 
   if (!current) {
     // 해당 이모지 카운트 자체가 없었음
-    return { deleted: false, studyId: sid, emojiId: eid, count: 0, reason: 'not-exists' };
+    return {
+      deleted: false,
+      studyId: sid,
+      emojiId: eid,
+      count: 0,
+      reason: 'not-exists',
+    };
   }
 
   // 4) 기존 count <= dec 이면 0 이하가 되므로 삭제
@@ -417,7 +447,13 @@ async function serviceEmojiDecrement(studyId, emojiSymbol, emojiCount) {
   }
 
   // 동시성 등으로 이미 삭제된 케이스
-  return { deleted: false, studyId: sid, emojiId: eid, count: 0, reason: 'race' };
+  return {
+    deleted: false,
+    studyId: sid,
+    emojiId: eid,
+    count: 0,
+    reason: 'race',
+  };
 }
 
 export default {
