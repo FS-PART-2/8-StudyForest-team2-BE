@@ -27,6 +27,9 @@ app.use(express.urlencoded({ limit: '1mb', extended: true }));
 app.use(morgan('combined'));
 
 // API 라우트 설정
+app.get('/', (req, res) => {
+  res.send('MindMeld API 연결 성공');
+});
 app.use('/api/studies', studyRoutes);
 app.use('/api', habitRoutes);
 app.use('/api/users', userRoutes);
