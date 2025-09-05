@@ -5,6 +5,19 @@ import {
   rotateRefreshTokenService,
   logoutUserService,
 } from '../services/user.services.js';
+
+// 공용 쿠키 옵션 계산
+function getRefreshCookieOptions() {
+  const days = Number(process.env.REFRESH_EXPIRES_DAYS ?? 7);
+  const maxAgeMs = days * 24 * 60 * 60 * 1000;
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: maxAgeMs,
+  };
+}
 // 회원가입
 export async function registerController(req, res, next) {
   const result = validationResult(req);
@@ -71,23 +84,14 @@ export async function refreshTokenController(req, res) {
     err.code = 'NO_REFRESH_TOKEN';
     throw err;
   }
-
-  const { accessToken, refreshToken, refreshExpiresAt, user } =
+  const { accessToken, refreshToken, user } =
     await rotateRefreshTokenService(token);
 
-  res
-    .cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      expires: refreshExpiresAt,
-    })
-    .json({
-      success: true,
-      message: '토큰이 재발급되었습니다.',
-      data: { accessToken, user },
-    });
+  res.cookie('refreshToken', refreshToken, getRefreshCookieOptions()).json({
+    success: true,
+    message: '토큰이 재발급되었습니다.',
+    data: { accessToken, user },
+  });
 }
 // 로그아웃
 export async function logoutController(req, res) {
