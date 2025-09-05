@@ -7,7 +7,6 @@ import getTodayHabitsService, {
   renameTodayHabitService,
   deleteTodayHabitService,
   addTodayHabitService,
-  setHabitHistoryService,
 } from '../services/habit.services.js';
 function parsePositiveParam(req, name) {
   const raw = req.params?.[name];
