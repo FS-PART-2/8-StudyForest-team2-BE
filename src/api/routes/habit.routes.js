@@ -394,7 +394,7 @@ import {
   getWeekHabitsController,
   renameTodayHabitController,
   deleteTodayHabitController,
-  addTodayHabitController,
+  addTodayHabitController
 } from '../controllers/habit.controllers.js';
 
 const router = express.Router();
@@ -441,6 +441,7 @@ router.post(
   '/habits/today/:studyId',
   errorMiddleware.asyncHandler(addTodayHabitController),
 );
+
 // 에러 핸들링 미들웨어 (맨 마지막)
 router.use(errorMiddleware.errorHandler);
 

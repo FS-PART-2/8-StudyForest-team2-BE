@@ -94,6 +94,11 @@ function createRefreshTokenPlain(bytes = 48) {
   return crypto.randomBytes(bytes).toString('hex');
 }
 
+// 랜덤 이미지 선택
+function randomStudyImage() {
+  const num = faker.number.int({ min: 1, max: 8 });
+  return `/img/img-${String(num).padStart(2, '0')}.png`;
+}
 async function seedUsers(n = 5) {
   const baseNames =
     KOREAN_NAMES.length >= n
@@ -150,7 +155,7 @@ async function seedStudies(n = 2) {
           nick: leader,
           name: `${leader}의 ${subject} 스터디`,
           content: faker.helpers.arrayElement(STUDY_CONTENTS),
-          img: '/img/default.png',
+          img: randomStudyImage(), // 랜덤 이미지
           password: password,
           isActive: randBool(),
         },

@@ -267,13 +267,3 @@ export {
   deleteTodayHabitController,
   addTodayHabitController,
 };
-
-export default {
-  getTodayHabitsController,
-  createTodayHabitsController,
-  toggleHabitController,
-  getWeekHabitsController,
-  renameTodayHabitController,
-  deleteTodayHabitController,
-  addTodayHabitController,
-};

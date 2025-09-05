@@ -34,58 +34,83 @@ async function serviceGetStudy(){
   }
 }
 
-// 스터디 목록 조회 API 서비스
 async function serviceStudyList(options) {
   const { offset, limit, keyword, pointOrder, recentOrder, isActive } = options;
-  const where = {
-    isActive: JSON.parse(isActive),
+  const studyWhere = {
+    isActive: isActive,
     ...(keyword
       ? {
-          name: {
-            contains: keyword,
-            mode: 'insensitive',
-          },
+          OR: [
+            { nick: { contains: keyword, mode: 'insensitive' } },
+            { name: { contains: keyword, mode: 'insensitive' } },
+            { content: { contains: keyword, mode: 'insensitive' } },
+          ],
         }
       : {}),
   };
 
   try {
-    const [studies, totalCount] = await Promise.all([
-      prisma.study.findMany({
-        where,
-        orderBy: [
-          {
-            points: {
-              _count: pointOrder === 'desc' ? 'desc' : 'asc',
-            },
-          },
-          { createdAt: recentOrder === 'recent' ? 'desc' : 'asc' },
-        ],
+      // 1) Point를 studyId로 groupBy: 최댓값(value) 기준 정렬 + 페이지네이션
+      const pointAgg = await prisma.point.groupBy({
+        by: ['studyId'],
+        where: { study: studyWhere },         // Point -> Study 역참조명: study
+        _max: { point: true },
+        orderBy: { _max: { point: pointOrder === 'asc' ? 'asc' : 'desc' } },
         skip: offset,
         take: Math.min(limit, 50),
-        select: {
-          id: true,
-          nick: true,
-          name: true,
-          content: true,
-          img: true,
-          isActive: true,
-          createdAt: true,
-          updatedAt: true,
-          _count: {
-            select: {
-              points: true,
-              habitHistories: true,
-              focuses: true,
-              studyEmojis: true,
-            },
-          },
-        },
-      }),
-      prisma.study.count({ where }),
-    ]);
+      });
 
-    return { studies, totalCount };
+      const orderedIds = pointAgg.map(r => r.studyId);
+
+      // 2) 상세 Study 조회
+      const studiesRaw = await prisma.study.findMany({
+        where: { id: { in: orderedIds } },
+        select: {
+          id: true, nick: true, name: true, content: true, img: true,
+          isActive: true, createdAt: true, updatedAt: true,
+          studyEmojis: {
+            orderBy: [{ count: 'desc' }, { emojiId: 'asc' }],
+            take: 3,
+            select: { count: true, emoji: { select: { id: true, symbol: true } } },
+          },
+          // 필요 시 최소 필드만
+          points: { select: { value: true } },
+        },
+      });
+
+      // 원래 정렬 순서 유지 + createdAt 타이브레이크 적용(동점일 때)
+      const scoreByStudyId = new Map(pointAgg.map(r => [r.studyId, r._sum.value ?? 0]));
+      const mapById = new Map(studiesRaw.map(s => [s.id, s]));
+    orderedIds
+      .map(id => mapById.get(id))
+      .filter(Boolean)
+      .sort((a, b) => {
+        const va = scoreByStudyId.get(a.id) ?? 0;
+        const vb = scoreByStudyId.get(b.id) ?? 0;
+        if (va !== vb) return pointOrder === 'asc' ? va - vb : vb - va;
+        return recentOrder === 'recent'
+          ? new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          : new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      });
+
+    const totalCount = await prisma.study.count({ where: studyWhere });
+    const normalizedById = new Map(studiesRaw.map(study => [study.id, {
+        ...study,
+        // studyEmojis 구조 변환
+        studyEmojis: study.studyEmojis.map((e) => ({
+          id: e.emoji.id,
+          count: e.count,
+          symbol: e.emoji.symbol,
+        })),
+        // points 배열 → 합계 또는 0
+        points: (scoreByStudyId.get(study.id) ?? 0),
+      }]));
+
+      const studies = orderedIds
+        .map(id => normalizedById.get(id))
+        .filter(Boolean);
+
+      return { studies, totalCount };
   } catch (error) {
     console.log(error, '가 발생했습니다.');
     throw error;
@@ -231,7 +256,7 @@ async function serviceStudyDetail(studyId) {
           },
           habitHistories: {
             orderBy: { weekDate: 'desc' },
-            take: 1, // 최신 1개만 예시
+            take: 1,
             include: { habits: true },
           },
           _count: {
@@ -404,5 +429,5 @@ export default {
   serviceStudyDetail,
 
   serviceEmojiIncrement,
-  serviceEmojiDecrement
+  serviceEmojiDecrement,
 };
