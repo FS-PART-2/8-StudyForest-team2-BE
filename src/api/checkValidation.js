@@ -61,13 +61,31 @@ export const validateUpdateMe = [
     .optional()
     .isString()
     .isLength({ min: 8, max: 16 })
-    .withMessage('currentPassword는 8~16자여야 합니다.'),
-
+    .withMessage('currentPassword는 8~16자여야 합니다.')
+    .custom((_, { req }) => {
+      if (req.body.currentPassword && !req.body.newPassword) {
+        throw new Error('비밀번호 변경 시 newPassword를 함께 보내야 합니다.');
+      }
+      return true;
+    }),
   body('newPassword')
     .optional()
     .isString()
     .isLength({ min: 8, max: 16 })
     .withMessage('newPassword는 8~16자여야 합니다.')
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/)
-    .withMessage('newPassword는 대/소문자와 숫자를 포함해야 합니다.'),
+    .withMessage('newPassword는 대/소문자와 숫자를 포함해야 합니다.')
+    .custom((newPwd, { req }) => {
+      if (newPwd && !req.body.currentPassword) {
+        throw new Error('비밀번호 변경 시 currentPassword가 필요합니다.');
+      }
+      if (
+        newPwd &&
+        req.body.currentPassword &&
+        newPwd === req.body.currentPassword
+      ) {
+        throw new Error('newPassword는 currentPassword와 달라야 합니다.');
+      }
+      return true;
+    }),
 ];

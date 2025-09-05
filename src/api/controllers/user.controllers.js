@@ -87,19 +87,11 @@ export async function refreshTokenController(req, res) {
   const { accessToken, refreshToken, user } =
     await rotateRefreshTokenService(token);
 
-  res
-    .cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      expires: refreshExpiresAt,
-    })
-    .json({
-      success: true,
-      message: '토큰이 재발급되었습니다.',
-      data: { accessToken, user },
-    });
+  res.cookie('refreshToken', refreshToken, getRefreshCookieOptions()).json({
+    success: true,
+    message: '토큰이 재발급되었습니다.',
+    data: { accessToken, user },
+  });
 }
 // 로그아웃
 export async function logoutController(req, res) {
