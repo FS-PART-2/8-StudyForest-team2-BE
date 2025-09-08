@@ -6,9 +6,9 @@ import cookieParser from 'cookie-parser';
 import express from 'express';
 import morgan from 'morgan';
 
-import studyRoutes from '../src/api/routes/study.routes.js';
-import habitRoutes from '../src/api/routes/habit.routes.js';
-import userRoutes from '../src/api/routes/user.routes.js';
+import studyRoutes from './api/routes/study.routes.js';
+import habitRoutes from './api/routes/habit.routes.js';
+import userRoutes from './api/routes/user.routes.js';
 
 import { swaggerDocs } from './common/swagger.js';
 // 환경 변수 설정
