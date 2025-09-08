@@ -1,6 +1,10 @@
 @baseUrl = http://localhost:3000
 @path = /api/users
 @register = {{baseUrl}}{{path}}/register
+@login = {{baseUrl}}{{path}}/login
+@refresh = {{baseUrl}}{{path}}/refresh
+@logout = {{baseUrl}}{{path}}/logout
+@me = {{baseUrl}}{{path}}/me
 ### ------------------------------------------------------------
 ### 1) 회원가입 성공 케이스
 ### ------------------------------------------------------------
@@ -80,12 +84,7 @@ Content-Type: application/json
   "password": "Abcd1234!",
   "nick": "배드유저"
 }
-###
-@baseUrl = http://localhost:3000
-@path = /api/users
-@login = {{baseUrl}}{{path}}/login
-@refresh = {{baseUrl}}{{path}}/refresh
-@logout = {{baseUrl}}{{path}}/logout
+
 ### ------------------------------------------------------------
 ### 1) 로그인 성공 (200 기대)
 ###    - 위 회원가입 테스트에서 생성한 계정 사용
@@ -161,3 +160,55 @@ POST {{logout}}
 Content-Type: application/json
 
 {}
+
+
+### 1) 내 프로필 조회 (200 기대)
+GET {{me}}
+Authorization: Bearer {{accessToken}}
+
+### 2) 닉네임 변경 (200 기대)
+PATCH {{me}}
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "nick": "치준짱"
+}
+
+### 3) 이메일 변경 (200 기대)
+PATCH {{me}}
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "email": "me2@example.com"
+}
+
+### 4) 사용자명 변경 (200 기대)
+PATCH {{me}}
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "username": "chijunee_new"
+}
+
+### 5) 비밀번호 변경 (200 기대)
+PATCH {{me}}
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "currentPassword": "Abcd1234!",
+  "newPassword": "Qwer5678!"
+}
+
+### 6) 잘못된 현재 비밀번호로 비번 변경 시도 (400 기대)
+PATCH {{me}}
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "currentPassword": "WrongPass",
+  "newPassword": "Another123!"
+}
