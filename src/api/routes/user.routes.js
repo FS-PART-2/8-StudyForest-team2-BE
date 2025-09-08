@@ -14,12 +14,9 @@ import {
   updateMeController,
 } from '../controllers/user.controllers.js';
 
-
 import coreMiddleware from '../../../src/common/cors.js';
 import errorMiddleware from '../../../src/common/error.js'; // 에러 케이스 추가는 이 파일에서 관리
 import { authenticateToken } from '../../../src/common/auth.js';
-
-
 
 const router = express.Router();
 
@@ -120,7 +117,7 @@ router.get(
  *       '200': { description: 업데이트 성공 }
  *       '400': { description: 검증 실패 / 현재 비번 불일치 / 변경필드 없음 }
  *       '409': { description: 중복 username/email }
-
+ */
 router.patch(
   '/me',
   authenticateToken,
