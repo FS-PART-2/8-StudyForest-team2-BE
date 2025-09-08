@@ -6,7 +6,7 @@
 |- /http # HTTP 요청 파일 (API 테스트 용도)
 |  |- study.http
 |  |- habit.http
-|  |- concentrate.http
+|  |- focus.http
 |- /src
 |  |- app.js # express의 초기화 및 서버의 구동(listen)을 담당
 |  |- /config # cors, logger, swagger 설정 파일
@@ -18,15 +18,15 @@
 |  |  |- routes/ # URL·HTTP 메서드와 컨트롤러 함수를 매핑하는 진입점
 |  |  |  |- study.routes.js
 |  |  |  |- habit.routes.js
-|  |  |  |- concentrate.routes.js
+|  |  |  |- focus.routes.js
 |  |  |- controllers/ # 요청 파싱(params/query/body) + 입력 검증 결과 처리
 |  |  |  |- study.controllers.js
 |  |  |  |- habit.controllers.js
-|  |  |  |- concentrate.controllers.js
+|  |  |  |- focus.controllers.js
 |  |  |- services/ # 핵심 비즈니스 로직이 들어가는 코드
 |  |  |  |- study.services.js
 |  |  |  |- habit.services.js
-|  |  |  |- concentrate.services.js
+|  |  |  |- focus.services.js
 |  |- /prisma # Prisma 스키마, seed/mock 데이터 파일
 |  |  |- schema.prisma
 |  |  |- migrations/
