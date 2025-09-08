@@ -9,6 +9,7 @@ import morgan from 'morgan';
 import studyRoutes from './api/routes/study.routes.js';
 import habitRoutes from './api/routes/habit.routes.js';
 import userRoutes from './api/routes/user.routes.js';
+import focusRoutes from './api/routes/focus.routes.js';
 
 import { swaggerDocs } from './common/swagger.js';
 // 환경 변수 설정
@@ -34,6 +35,7 @@ app.get('/', (req, res) => {
 app.use('/api/studies', studyRoutes);
 app.use('/api', habitRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/focus', focusRoutes);
 
 // Swagger 문서
 swaggerDocs(app);
