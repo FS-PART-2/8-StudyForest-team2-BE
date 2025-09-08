@@ -11,11 +11,8 @@ async function serviceGetList(studyId) {
     },
   });
 
-  if (!focusList) {
-    const err = new Error('집중 세션이 존재하지 않습니다.');
-    err.status = 404;
-    err.code = 'FOCUS_NOT_FOUND';
-    throw err;
+  if (focusList.length === 0) {
+    return [];
   }
 
   return focusList;

@@ -6,7 +6,7 @@
 |- /http # HTTP 요청 파일 (API 테스트 용도)
 |  |- study.http
 |  |- habit.http
-|  |- concentrate.http
+|  |- focus.http
 |- /src
 |  |- app.js # express의 초기화 및 서버의 구동(listen)을 담당
 |  |- /config # cors, logger, swagger 설정 파일

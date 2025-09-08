@@ -7,9 +7,17 @@ const prisma = new PrismaClient();
 
 async function controlGetList(req, res) {
   /* 쿼리 파라미터 파싱 및 입력 검증 */
-  const studyId = req.query.id;
-  const studyIdResult = await prisma.study.findMany({
+  const studyId = Number(req.params.studyId);
+  if (!Number.isInteger(studyId) || studyId <= 0) {
+    const err = new Error('유효하지 않은 스터디 ID입니다.');
+    err.status = 400;
+    err.code = 'INVALID_STUDY_ID';
+    throw err;
+  }
+
+  const studyIdResult = await prisma.study.findUnique({
     where: { id: studyId },
+    select: { id: true },
   });
   if (!studyIdResult) {
     const err = new Error('유효하지 않은 스터디 ID입니다.');
@@ -28,8 +36,15 @@ async function controlGetList(req, res) {
 async function controlUpdateFocus(req, res) {
   /* 쿼리 파라미터 파싱 및 입력 검증 */
   const studyId = Number(req.params.studyId);
-  const studyIdResult = await prisma.study.findMany({
+  if (!Number.isFinite(studyId) || studyId <= 0) {
+    const err = new Error('유효하지 않은 스터디 ID입니다.');
+    err.status = 400;
+    err.code = 'INVALID_STUDY_ID';
+    throw err;
+  }
+  const studyIdResult = await prisma.study.findUnique({
     where: { id: studyId },
+    select: { id: true },
   });
   if (!studyIdResult) {
     const err = new Error('유효하지 않은 스터디 ID입니다.');
@@ -39,15 +54,21 @@ async function controlUpdateFocus(req, res) {
   }
 
   const { minuteData } = req.body;
-  if (typeof minuteData !== 'number' || minuteData <= 0) {
+  const { secondData } = req.body;
+  if (
+    !Number.isFinite(minuteData) ||
+    !Number.isFinite(secondData) ||
+    minuteData < 0 ||
+    secondData < 0 ||
+    (minuteData === 0 && secondData === 0)
+  ) {
     const err = new Error('유효하지 않은 시간 데이터입니다.');
     err.status = 400;
     err.code = 'INVALID_TIME_DATA';
     throw err;
   }
 
-  const { secondData } = req.body;
-  if (typeof secondData !== 'number' || secondData < 0) {
+  if (typeof secondData !== 'number' || secondData < 0 || secondData > 59) {
     const err = new Error('유효하지 않은 시간 데이터입니다.');
     err.status = 400;
     err.code = 'INVALID_TIME_DATA';
