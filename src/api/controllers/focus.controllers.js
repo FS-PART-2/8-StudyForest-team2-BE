@@ -6,7 +6,7 @@ import focusService from '../services/focus.services.js';
 const prisma = new PrismaClient();
 
 async function controlGetList(req, res) {
-  /* 쿼리 파라미터 파싱 및 입력 검증 */
+  /* 파라미터/바디 파싱 및 입력 검증 */
   const studyId = Number(req.params.studyId);
   if (!Number.isInteger(studyId) || studyId <= 0) {
     const err = new Error('유효하지 않은 스터디 ID입니다.');
@@ -20,7 +20,7 @@ async function controlGetList(req, res) {
     select: { id: true },
   });
   if (!studyIdResult) {
-    const err = new Error('존재하지 않은 스터디 ID입니다.');
+    const err = new Error('존재하지 않는 스터디 ID입니다.');
     err.status = 404;
     err.code = 'STUDY_NOT_FOUND';
     throw err;
@@ -34,7 +34,7 @@ async function controlGetList(req, res) {
 }
 
 async function controlUpdateFocus(req, res) {
-  /* 쿼리 파라미터 파싱 및 입력 검증 */
+  /* 파라미터/바디 파싱 및 입력 검증 */
   const studyId = Number(req.params.studyId);
   if (!Number.isInteger(studyId) || studyId <= 0) {
     const err = new Error('유효하지 않은 스터디 ID입니다.');
@@ -47,7 +47,7 @@ async function controlUpdateFocus(req, res) {
     select: { id: true },
   });
   if (!studyIdResult) {
-    const err = new Error('존재하지 않은 스터디 ID입니다.');
+    const err = new Error('존재하지 않는 스터디 ID입니다.');
     err.status = 404;
     err.code = 'STUDY_NOT_FOUND';
     throw err;
