@@ -20,9 +20,9 @@ async function controlGetList(req, res) {
     select: { id: true },
   });
   if (!studyIdResult) {
-    const err = new Error('유효하지 않은 스터디 ID입니다.');
-    err.status = 400;
-    err.code = 'INVALID_STUDY_ID';
+    const err = new Error('존재하지 않은 스터디 ID입니다.');
+    err.status = 404;
+    err.code = 'STUDY_NOT_FOUND';
     throw err;
   }
 
@@ -36,7 +36,7 @@ async function controlGetList(req, res) {
 async function controlUpdateFocus(req, res) {
   /* 쿼리 파라미터 파싱 및 입력 검증 */
   const studyId = Number(req.params.studyId);
-  if (!Number.isFinite(studyId) || studyId <= 0) {
+  if (!Number.isInteger(studyId) || studyId <= 0) {
     const err = new Error('유효하지 않은 스터디 ID입니다.');
     err.status = 400;
     err.code = 'INVALID_STUDY_ID';
@@ -47,28 +47,22 @@ async function controlUpdateFocus(req, res) {
     select: { id: true },
   });
   if (!studyIdResult) {
-    const err = new Error('유효하지 않은 스터디 ID입니다.');
-    err.status = 400;
-    err.code = 'INVALID_STUDY_ID';
+    const err = new Error('존재하지 않은 스터디 ID입니다.');
+    err.status = 404;
+    err.code = 'STUDY_NOT_FOUND';
     throw err;
   }
 
-  const { minuteData } = req.body;
-  const { secondData } = req.body;
+  const minuteData = Number(req.body?.minuteData);
+  const secondData = Number(req.body?.secondData);
   if (
-    !Number.isFinite(minuteData) ||
-    !Number.isFinite(secondData) ||
+    !Number.isInteger(minuteData) ||
+    !Number.isInteger(secondData) ||
     minuteData < 0 ||
     secondData < 0 ||
+    secondData > 59 ||
     (minuteData === 0 && secondData === 0)
   ) {
-    const err = new Error('유효하지 않은 시간 데이터입니다.');
-    err.status = 400;
-    err.code = 'INVALID_TIME_DATA';
-    throw err;
-  }
-
-  if (typeof secondData !== 'number' || secondData < 0 || secondData > 59) {
     const err = new Error('유효하지 않은 시간 데이터입니다.');
     err.status = 400;
     err.code = 'INVALID_TIME_DATA';
