@@ -220,7 +220,7 @@ async function seedPerStudy(study, emojis) {
     await tx.point.create({
       data: {
         point: faker.number.int({ min: 5, max: 300 }),
-        value: 0,
+        value: faker.number.int({ min: 1, max: 100 }),
         studyId: study.id,
       },
     });
