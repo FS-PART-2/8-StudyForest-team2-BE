@@ -7,10 +7,9 @@
 @pwd = test
 # 조회 API를 위한 파라미터 설정
 @offset = 0
-@pointOrder = desc
-@recentOrder = recent
-@isActive = false
-@keyword = 시험
+@order = points_asc
+@isActive = true
+@keyword =
 
 ### 1) [로컬] 스터디 관리 페이지 조회 (관리자용)
 
@@ -18,11 +17,11 @@ GET {{base_local}}/studies/manage
 
 ### 2) [배포] 스터디 조회 API (offset, pointOrder, recentOrder, isActive, keyword)
 
-GET {{base_prod}}/studies?offset={{offset}}&pointOrder={{pointOrder}}&recentOrder={{recentOrder}}&isActive={{isActive}}&keyword={{keyword}}
+GET {{base_prod}}/studies?offset={{offset}}&sort={{order}}&isActive={{isActive}}&keyword={{keyword}}
 
 ### 2) [로컬] 스터디 조회 API (offset, pointOrder, recentOrder, isActive, keyword)
 
-GET {{base_local}}/studies?offset={{offset}}&pointOrder={{pointOrder}}&recentOrder={{recentOrder}}&isActive={{isActive}}&keyword={{keyword}}
+GET {{base_local}}/studies?offset={{offset}}&sort={{order}}&isActive={{isActive}}&keyword={{keyword}}
 
 ### 3) [배포] 스터디 생성 API
 
