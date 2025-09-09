@@ -148,7 +148,7 @@ async function seedStudies(n = 7) {
       return prisma.study.create({
         data: {
           nick: leader,
-          name: `${leader}의 ${subject} 스터디`,
+          name: `${subject} 스터디`,
           content: faker.helpers.arrayElement(STUDY_CONTENTS),
           img: randomStudyImage(), // 랜덤 이미지
           password: password,
