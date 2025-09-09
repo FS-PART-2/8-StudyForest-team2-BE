@@ -87,6 +87,7 @@ const HABITS = [
   '기상 후 스트레칭',
   '영어 단어 30개 외우기',
   '독서 20분',
+  '하루 회고 3줄 쓰기',
 ];
 
 // 안전한 랜덤 리프레시 토큰 평문 생성
@@ -97,7 +98,7 @@ function createRefreshTokenPlain(bytes = 48) {
 // 랜덤 이미지 선택
 function randomStudyImage() {
   const num = faker.number.int({ min: 1, max: 8 });
-  return `/img/img-${String(num).padStart(2, '0')}.png`;
+  return `img-${String(num).padStart(2, '0')}`;
 }
 async function seedUsers(n = 5) {
   const baseNames =
@@ -136,15 +137,9 @@ async function seedUsers(n = 5) {
   });
 }
 
-async function seedStudies(n = 2) {
-  // const password = await argon2.hash(
-  //   faker.internet.password({
-  //     length: faker.number.int({ min: 8, max: 16 }),
-  //   }),
-  // )
-
+async function seedStudies(n = 7) {
   // 해시 처리된 고정된 비밀번호 생성
-  const password = await argon2.hash('1234');
+  const password = await argon2.hash('abcd1234');
 
   return Promise.all(
     Array.from({ length: n }).map(() => {
@@ -153,7 +148,7 @@ async function seedStudies(n = 2) {
       return prisma.study.create({
         data: {
           nick: leader,
-          name: `${leader}의 ${subject} 스터디`,
+          name: `${subject} 스터디`,
           content: faker.helpers.arrayElement(STUDY_CONTENTS),
           img: randomStudyImage(), // 랜덤 이미지
           password: password,
@@ -218,17 +213,14 @@ async function seedPerStudy(study, emojis) {
       ],
     });
 
-    await tx.focus.createMany({
-      data: [
-        { setTime: faker.date.soon({ days: 3 }), studyId: study.id },
-        { setTime: faker.date.soon({ days: 3 }), studyId: study.id },
-      ],
+    await tx.focus.create({
+      data: { setTime: faker.date.soon({ days: 3 }), studyId: study.id },
     });
 
     await tx.point.create({
       data: {
-        point: faker.number.int({ min: 5, max: 50 }),
-        value: faker.number.int({ min: 1, max: 10 }),
+        point: faker.number.int({ min: 5, max: 300 }),
+        value: faker.number.int({ min: 1, max: 100 }),
         studyId: study.id,
       },
     });
@@ -237,17 +229,92 @@ async function seedPerStudy(study, emojis) {
       data: {
         studyId: study.id,
         emojiId: emojis[0].id,
-        count: faker.number.int({ min: 1, max: 20 }),
+        count: faker.number.int({ min: 1, max: 30 }),
       },
     });
   });
 }
+// 테스트용 데이터 생성
+async function createTestStudy(emojis, customHabits = []) {
+  const passwordHash = await argon2.hash('abcd1234'); // 접속 테스트용 고정 비밀번호
+  const study = await prisma.study.create({
+    data: {
+      nick: 'Mindmeld',
+      name: 'FS 8기 프로젝트',
+      content: '풀스택 프로젝트 스터디입니다.',
+      img: 'img-01',
+      password: passwordHash,
+      isActive: true,
+    },
+  });
+
+  // HabitHistory 1개 생성
+  const habitHistory = await prisma.habitHistory.create({
+    data: {
+      studyId: study.id,
+      weekDate: new Date(),
+      monDone: false,
+      tueDone: true,
+      wedDone: false,
+      thuDone: true,
+      friDone: false,
+      satDone: false,
+      sunDone: false,
+    },
+  });
+
+  // 습관 추가
+  const titles = (
+    customHabits.length
+      ? customHabits
+      : ['실습 코드 작성하기', '코테 2문제 풀기', '하루 회고 3줄 쓰기']
+  ).slice(0, 4);
+
+  const baseDate = new Date();
+  await prisma.habit.createMany({
+    data: titles.map((t, i) => ({
+      habit: t,
+      isDone: false,
+      date: new Date(baseDate.getTime() - i * 24 * 60 * 60 * 1000), // 날짜 분산
+      habitHistoryId: habitHistory.id,
+    })),
+  });
+
+  await prisma.focus.create({
+    data: { setTime: faker.date.soon({ days: 3 }), studyId: study.id },
+  });
+
+  const awarded = faker.number.int({ min: 5, max: 300 });
+  await prisma.point.create({
+    data: { point: awarded, value: awarded, studyId: study.id },
+  });
+
+  await prisma.studyEmoji.create({
+    data: {
+      studyId: study.id,
+      emojiId: emojis[0].id, // '🔥'
+      count: faker.number.int({ min: 1, max: 30 }),
+    },
+  });
+
+  console.log(
+    `[Seed][TestStudy] id=${study.id} name="${study.name}" (habits=${titles.join(', ')})`,
+  );
+  return study;
+}
 
 async function main() {
   await seedUsers(5);
-  const studies = await seedStudies(2);
+  const studies = await seedStudies(7);
   const emojis = await seedEmojisBase();
   await Promise.all(studies.map(s => seedPerStudy(s, emojis)));
+
+  await createTestStudy(emojis, [
+    'React 강의 듣기',
+    '주강사님이랑 스크럼 진행',
+    '캐치마인드 1회 진행',
+  ]);
+
   console.log('🌱 Faker seed data inserted!');
 }
 
