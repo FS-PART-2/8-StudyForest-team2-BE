@@ -22,46 +22,15 @@ router.use(coreMiddleware); // CORS 미들웨어 적용
 /**
  * @swagger
  * /api/focus/{studyId}:
- *   get:
- *     summary: 스터디별 집중 시간 목록 조회
- *     tags: [Focus]
- *     parameters:
- *       - in: path
- *         name: studyId
- *         required: true
- *         schema:
- *           type: integer
- *           example: 1
- *         description: 스터디 ID
- *     responses:
- *       200:
- *         description: 성공적으로 조회됨
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: integer
- *                     example: 1
- *                   setTime:
- *                     type: string
- *                     format: date-time
- *                     example: "2025-09-11T23:41:08.354Z"
- *       400:
- *         description: 잘못된 스터디 ID
- *       404:
- *         description: 존재하지 않는 스터디
- *
  *   patch:
- *     summary: 스터디 집중 시간 갱신
+ *     summary: 스터디 포인트 갱신
+ *     description: 특정 스터디의 포인트를 누적 갱신합니다.
  *     tags: [Focus]
  *     parameters:
  *       - in: path
  *         name: studyId
  *         required: true
+ *         description: 포인트를 갱신할 스터디 ID
  *         schema:
  *           type: integer
  *           example: 1
@@ -72,56 +41,30 @@ router.use(coreMiddleware); // CORS 미들웨어 적용
  *           schema:
  *             type: object
  *             required:
- *               - minuteData
- *               - secondData
+ *               - totalPoints
  *             properties:
- *               minuteData:
+ *               totalPoints:
  *                 type: integer
  *                 minimum: 0
- *                 description: 분 단위 (0 이상)
- *                 example: 10
- *               secondData:
- *                 type: integer
- *                 minimum: 0
- *                 maximum: 59
- *                 description: 초 단위 (0 이상 59 이하)
- *                 example: 30
+ *                 description: 누적할 포인트 값 (0 이상)
+ *                 example: 50
  *     responses:
  *       200:
- *         description: 성공적으로 업데이트됨
+ *         description: 포인트 갱신 성공
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 id:
+ *                 point:
  *                   type: integer
- *                   example: 2
- *                 setTime:
- *                   type: string
- *                   format: date-time
- *                   example: "2025-09-10T02:29:29.866Z"
- *                 createdAt:
- *                   type: string
- *                   format: date-time
- *                   example: "2025-09-09T01:14:31.143Z"
- *                 updatedAt:
- *                   type: string
- *                   format: date-time
- *                   example: "2025-09-10T02:19:29.866Z"
- *                 studyId:
- *                   type: integer
- *                   example: 1
+ *                   description: 갱신 후 누적 포인트
+ *                   example: 795
  *       400:
- *         description: 유효하지 않은 입력값
+ *         description: 잘못된 요청 (point 값이 0 미만이거나 형식 오류)
  *       404:
- *         description: 존재하지 않는 스터디
+ *         description: 해당 studyId에 대한 포인트 정보 없음
  */
-
-router.get(
-  '/:studyId',
-  errorMiddleware.asyncHandler(focusControllers.controlGetList),
-);
 
 router.patch(
   '/:studyId',
