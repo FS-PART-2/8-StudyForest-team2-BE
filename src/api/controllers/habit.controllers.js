@@ -185,7 +185,7 @@ async function renameTodayHabitController(req, res) {
       return res.status(401).json({ message: err.message });
     if (err.name === 'NotFoundError')
       return res.status(404).json({ message: err.message });
-    if (err.name === 'ConflictError')
+    if (err.name === 'ConflictError' || err.code === 'P2002')
       return res
         .status(409)
         .json({ message: err.message, conflicts: err.conflicts });
@@ -212,6 +212,9 @@ async function deleteTodayHabitController(req, res) {
       return res.status(401).json({ message: err.message });
     if (err.name === 'NotFoundError')
       return res.status(404).json({ message: err.message });
+    if (err.name === 'ConflictError') {
+      return res.status(409).json({ message: err.message });
+    }
     return res.status(500).json({ message: 'SERVER_ERROR' });
   }
 }
