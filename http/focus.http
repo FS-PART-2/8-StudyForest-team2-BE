@@ -1,0 +1,30 @@
+# 오늘의 집중 API를 테스트하는 HTTP 요청 파일입니다.
+
+# 공통 파라미터 설정
+@base_local = http://localhost:3000/api
+@base_prod = https://eight-studyforest-team2-be.onrender.com/api
+@studyId = 1
+
+### 1) [로컬] 오늘의 집중 조회 API
+GET {{base_local}}/focus/{{studyId}}
+
+### 1) [배포] 오늘의 집중 조회 API
+GET {{base_prod}}/focus/{{studyId}}
+
+### 2) [로컬] 오늘의 집중 수정 API
+PATCH {{base_local}}/focus/{{studyId}}
+Content-Type: application/json
+
+{
+  "minuteData": 10,
+  "secondData": 0
+}
+
+### 2) [배포] 오늘의 집중 수정 API
+PATCH {{base_prod}}/focus/{{studyId}}
+Content-Type: application/json
+
+{
+  "minuteData": 10,
+  "secondData": 0
+}

@@ -16,6 +16,7 @@ async function serviceGetStudy() {
         name: true,
         content: true,
         img: true,
+        isActive: true,
         createdAt: true,
         updatedAt: true,
         _count: {
@@ -89,7 +90,7 @@ async function serviceStudyList(options) {
 
     // 원래 정렬 순서 유지 + createdAt 타이브레이크 적용(동점일 때)
     const scoreByStudyId = new Map(
-      pointAgg.map(r => [r.studyId, r._max.value ?? 0]),
+      pointAgg.map(r => [r.studyId, r._sum.value ?? 0]),
     );
     const mapById = new Map(studiesRaw.map(s => [s.id, s]));
     orderedIds
@@ -253,7 +254,7 @@ async function serviceStudyDetail(studyId) {
   try {
     const [detail, pointsAgg] = await Promise.all([
       prisma.study.findUnique({
-        where: { id: studyId /* 필요 시 isActive: true 추가 고려 */ },
+        where: { id: studyId }, // 필요 시 { id: studyId, isActive: true }로 강화 가능
         select: {
           id: true,
           nick: true,
@@ -266,7 +267,7 @@ async function serviceStudyDetail(studyId) {
           studyEmojis: {
             select: {
               count: true,
-              emoji: true, // 관계 필드 가정: 이모지 정보 포함
+              emoji: true,
             },
             orderBy: { count: 'desc' },
           },
@@ -275,20 +276,25 @@ async function serviceStudyDetail(studyId) {
             take: 1,
             include: { habits: true },
           },
-          _count: {
-            select: { points: true, studyEmojis: true, habitHistories: true },
-          },
         },
       }),
-      // 포인트 총합 노출이 필요하다면 활성화
+      // ✅ 총합 포인트는 point 합계로 집계
       prisma.point.aggregate({
         where: { studyId },
-        _sum: { value: true },
+        _sum: { point: true },
       }),
     ]);
 
     if (!detail) return null;
-    return { ...detail, pointsSum: pointsAgg._sum.value ?? 0 };
+
+    // ✅ 안전 접근(?? 미사용): _sum 또는 point가 없으면 0
+    const totalPoint =
+      pointsAgg && pointsAgg._sum && typeof pointsAgg._sum.point === 'number'
+        ? pointsAgg._sum.point
+        : 0;
+
+    // 응답 키는 총합 포인트 의미의 point로 노출
+    return { ...detail, point: totalPoint };
   } catch (error) {
     console.log(error, '가 발생했습니다.');
     throw error;
