@@ -131,8 +131,6 @@
  *     description: 문자열 배열을 오늘(KST 00:00) 날짜로 일괄 생성합니다. 이미 존재하는 항목은 스킵됩니다.
  *     parameters:
  *       - $ref: '#/components/parameters/StudyIdParam'
- *     security:
- *       - studyPassword: []
  *     requestBody:
  *       required: true
  *       content:
@@ -180,8 +178,6 @@
  *     description: 제목 하나를 오늘(KST 00:00) 날짜로 생성합니다. 같은 제목이 오늘 이미 있으면 409를 반환합니다.
  *     parameters:
  *       - $ref: '#/components/parameters/StudyIdParam'
- *     security:
- *       - studyPassword: []
  *     requestBody:
  *       required: true
  *       content:
@@ -222,8 +218,6 @@
  *         in: path
  *         required: true
  *         schema: { type: integer }
- *     security:
- *       - studyPassword: []
  *     responses:
  *       '200':
  *         description: 토글 성공
@@ -259,8 +253,6 @@
  *         required: false
  *         schema: { type: string, example: '2025-09-02' }
  *         description: 기준 날짜(YYYY-MM-DD). 미지정 시 오늘이 포함된 주.
- *     security:
- *       - studyPassword: []
  *     responses:
  *       '200':
  *         description: 조회 성공
@@ -324,8 +316,6 @@
  *         in: path
  *         required: true
  *         schema: { type: integer }
- *     security:
- *       - studyPassword: []
  *     requestBody:
  *       required: true
  *       content:
@@ -363,8 +353,6 @@
  *         in: path
  *         required: true
  *         schema: { type: integer }
- *     security:
- *       - studyPassword: []
  *     responses:
  *       '200':
  *         description: 삭제 성공

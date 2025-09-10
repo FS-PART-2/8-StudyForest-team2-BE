@@ -65,8 +65,6 @@ async function createTodayHabitsController(req, res, next) {
   try {
     const studyId = parsePositiveParam(req, 'studyId');
 
-    const password = parsePassword(req);
-
     let titles = [];
     if (Array.isArray(req.body?.habits)) {
       titles = req.body.habits.filter(
@@ -113,8 +111,6 @@ async function toggleHabitController(req, res, next) {
   try {
     const habitId = parsePositiveParam(req, 'habitId');
 
-    const password = parsePassword(req);
-
     const data = await toggleHabitService({ habitId, password });
     res.set('Cache-Control', 'no-store');
     res.vary('x-study-password');
@@ -138,8 +134,6 @@ async function getWeekHabitsController(req, res, next) {
   try {
     const studyId = parsePositiveParam(req, 'studyId');
 
-    const password = parsePassword(req);
-
     const dateStr =
       typeof req.query?.date === 'string' ? req.query.date : undefined;
 
@@ -162,7 +156,6 @@ async function getWeekHabitsController(req, res, next) {
 /* 오늘의 습관 이름 변경*/
 async function renameTodayHabitController(req, res) {
   const studyId = parsePositiveParam(req, 'studyId');
-  const password = parsePassword(req);
   const habitId = parsePositiveParam(req, 'habitId');
 
   const newTitle = String(req.body?.title || '').trim();
@@ -195,7 +188,6 @@ async function renameTodayHabitController(req, res) {
 /*오늘의 습관 삭제*/
 async function deleteTodayHabitController(req, res) {
   const studyId = parsePositiveParam(req, 'studyId');
-  const password = parsePassword(req);
   const habitId = parsePositiveParam(req, 'habitId');
 
   try {
@@ -221,7 +213,6 @@ async function deleteTodayHabitController(req, res) {
 /* 습관 단일 생성 */
 async function addTodayHabitController(req, res) {
   const studyId = parsePositiveParam(req, 'studyId');
-  const password = parsePassword(req);
   const title = String(req.body?.title || '').trim();
   if (!title) {
     return res.status(400).json({ message: 'title은 1자 이상이어야 합니다.' });
