@@ -537,11 +537,14 @@ export async function addTodayHabitService({ studyId, password, title }) {
       if (err?.code === 'P2002') {
         const e = new Error('오늘 이미 같은 이름의 습관이 존재합니다.');
         e.name = 'ConflictError';
+
         e.status = 409;
+
         throw e;
       }
       throw err;
     }
+
     return {
       created: {
         habitId: created.id,
