@@ -2,62 +2,36 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-async function serviceGetList(studyId) {
-  const focusList = await prisma.focus.findMany({
-    where: { studyId },
-    select: {
-      id: true,
-      setTime: true,
-    },
-  });
+async function serviceUpdateFocus(point, studyId) {
+  const numericStudyId = Number(studyId);
+  const numericPoint = Number(point);
 
-  if (focusList.length === 0) {
-    return [];
+  // 포인트 값 유효성 검사
+  if (!Number.isFinite(numericPoint) || numericPoint < 0) {
+    const err = new Error('point 값은 0 이상의 숫자여야 합니다.');
+    err.status = 400;
+    err.code = 'INVALID_POINT';
+    throw err;
   }
 
-  return focusList;
-}
+  // 1) 포인트 이벤트 1건 추가
+  // 2) 총합 집계  (트랜잭션으로 원자성 보장)
+  const [, agg] = await prisma.$transaction([
+    prisma.point.create({
+      data: { studyId: numericStudyId, point: numericPoint },
+      select: { id: true },
+    }),
+    prisma.point.aggregate({
+      where: { studyId: numericStudyId },
+      _sum: { point: true },
+    }),
+  ]);
 
-async function serviceUpdateFocus(studyId, minuteData, secondData) {
-  // ms 변환 헬퍼
-  const toMs = (minutes = 0, seconds = 0) => (minutes * 60 + seconds) * 1000;
-
-  // 의도: 오늘 행을 찾아 setTime = setTime + time (DateTime)
-  const today0 = new Date();
-  today0.setHours(0, 0, 0, 0);
-  const today1 = new Date();
-  today1.setHours(23, 59, 59, 999);
-
-  // 1) 오늘 행 찾기 (가장 최근 1건 가정)
-  const current = await prisma.focus.findFirst({
-    where: { studyId, setTime: { gte: today0, lte: today1 } },
-    orderBy: { id: 'desc' },
-  });
-
-  const now = new Date();
-  if (!current) {
-    // 오늘 행이 없으면 새로 생성
-    const created = await prisma.focus.create({
-      data: {
-        studyId,
-        setTime: new Date(now.getTime() + toMs(minuteData, secondData)), // 초기값을 “현재+delta”로
-        createdAt: now,
-        updatedAt: now,
-      },
-    });
-    return created;
-  }
-
-  // 2) 존재하면 Date 계산 후 대체 업데이트
-  const newSetTime = new Date(now.getTime() + toMs(minuteData, secondData));
-  const updated = await prisma.focus.update({
-    where: { id: current.id }, // ✅ focus PK로 갱신
-    data: { setTime: newSetTime, updatedAt: now },
-  });
-  return updated;
+  // 갱신된 누적 포인트 반환
+  // eslint-disable-next-line no-underscore-dangle
+  return { point: agg._sum.point };
 }
 
 export default {
-  serviceGetList,
   serviceUpdateFocus,
 };

@@ -16,8 +16,7 @@ PATCH {{base_local}}/focus/{{studyId}}
 Content-Type: application/json
 
 {
-  "minuteData": 10,
-  "secondData": 0
+  "totalPoints": 50
 }
 
 ### 2) [배포] 오늘의 집중 수정 API
@@ -25,6 +24,5 @@ PATCH {{base_prod}}/focus/{{studyId}}
 Content-Type: application/json
 
 {
-  "minuteData": 10,
-  "secondData": 0
+  "totalPoints": 50
 }
