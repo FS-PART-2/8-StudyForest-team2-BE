@@ -113,6 +113,18 @@ async function assertStudyWithPassword({ studyId, password }) {
 
   return study;
 }
+async function assertStudyExists(studyId) {
+  const study = await prisma.study.findUnique({
+    where: { id: studyId },
+    select: { id: true, name: true, isActive: true },
+  });
+  if (!study) {
+    const e = new Error('해당 스터디가 존재하지 않습니다.');
+    e.name = 'NotFoundError';
+    throw e;
+  }
+  return study;
+}
 
 /*  GET 오늘의 습관 조회 */
 export default async function getTodayHabitsService({ studyId, password }) {
@@ -158,8 +170,8 @@ export default async function getTodayHabitsService({ studyId, password }) {
 }
 
 /* POST 오늘의 습관 생성*/
-export async function createTodayHabitsService({ studyId, password, titles }) {
-  const study = await assertStudyWithPassword({ studyId, password });
+export async function createTodayHabitsService({ studyId, titles }) {
+  const study = await assertStudyExists(studyId);
 
   const { startUtc, endUtc, nowKstIso, kstDateStr } = getKSTDayRange();
   const { weekDateOnly } = getKSTWeekRange(startUtc);
@@ -213,7 +225,7 @@ export async function createTodayHabitsService({ studyId, password, titles }) {
 }
 
 /* PATCH 오늘의 습관 체크/해제 (토글) */
-export async function toggleHabitService({ habitId, password }) {
+export async function toggleHabitService({ habitId }) {
   // 1) 대상 조회
   const target = await prisma.habit.findUnique({
     where: { id: habitId },
@@ -222,16 +234,9 @@ export async function toggleHabitService({ habitId, password }) {
       isDone: true,
       date: true,
       habitHistoryId: true,
-      habitHistory: {
-        select: {
-          id: true,
-          studyId: true,
-          weekDate: true,
-        },
-      },
+      habitHistory: { select: { id: true, studyId: true, weekDate: true } },
     },
   });
-
   if (!target) {
     const e = new Error('해당 습관이 존재하지 않습니다.');
     e.name = 'NotFoundError';
@@ -239,10 +244,7 @@ export async function toggleHabitService({ habitId, password }) {
   }
 
   // 2) 스터디 인증
-  await assertStudyWithPassword({
-    studyId: target.habitHistory.studyId,
-    password,
-  });
+  await assertStudyExists(studyId);
 
   // 3) 토글
   const { startUtc, endUtc } = getKSTDayRange();
@@ -299,8 +301,8 @@ export async function toggleHabitService({ habitId, password }) {
 }
 
 /* GET 주간 습관 기록 조회 (KST 기준으로 days 키 통일) */
-export async function getWeekHabitsService({ studyId, password, dateStr }) {
-  const study = await assertStudyWithPassword({ studyId, password });
+export async function getWeekHabitsService({ studyId, dateStr }) {
+  const study = await assertStudyExists({ studyId });
 
   const { weekStartUtc, weekEndUtc, weekDateOnly } = getKSTWeekRange(dateStr);
 
@@ -379,11 +381,11 @@ export async function getWeekHabitsService({ studyId, password, dateStr }) {
 // 오늘의 습관 이름 수정
 export async function renameTodayHabitService({
   studyId,
-  password,
+
   habitId,
   newTitle,
 }) {
-  await assertStudyWithPassword({ studyId, password });
+  await assertStudyExists(studyId);
   const { startUtc, endUtc } = getKSTDayRange(); // 오늘 24:00(KST) 기준
 
   try {
@@ -434,7 +436,7 @@ export async function renameTodayHabitService({
         select: { id: true },
       });
       if (targets.length === 0) {
-        return { updated: 0, newTitle };
+        return { updated: 0, newTitle: normalizedNew };
       }
 
       // 4) 일괄 변경
@@ -443,7 +445,7 @@ export async function renameTodayHabitService({
         data: { habit: normalizedNew },
       });
 
-      return { updated: updated.count, newTitle };
+      return { updated: updated.count, newTitle: normalizedNew };
     });
   } catch (err) {
     if (err?.code === 'P2002') {
@@ -458,8 +460,8 @@ export async function renameTodayHabitService({
 
 // 오늘의 습관 삭제
 
-export async function deleteTodayHabitService({ studyId, password, habitId }) {
-  await assertStudyWithPassword({ studyId, password });
+export async function deleteTodayHabitService({ studyId, habitId }) {
+  await assertStudyExists(studyId);
   const { startUtc } = getKSTDayRange();
 
   const base = await prisma.habit.findFirst({
@@ -488,9 +490,9 @@ export async function deleteTodayHabitService({ studyId, password, habitId }) {
 
 //새로운 습관 추가
 
-export async function addTodayHabitService({ studyId, password, title }) {
+export async function addTodayHabitService({ studyId, title }) {
   // 스터디 인증 + 오늘 HabitHistory 보장
-  const study = await assertStudyWithPassword({ studyId, password });
+  const study = await assertStudyExists(studyId);
   const { startUtc, endUtc } = getKSTDayRange();
   const { weekDateOnly } = getKSTWeekRange(startUtc);
   return await prisma.$transaction(async tx => {
