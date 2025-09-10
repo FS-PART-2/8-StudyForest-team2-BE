@@ -245,6 +245,14 @@ export async function toggleHabitService({ habitId, password }) {
   });
 
   // 3) 토글
+  const { startUtc, endUtc } = getKSTDayRange();
+  const isTodayKST = target.date >= startUtc && target.date < endUtc;
+  if (!isTodayKST) {
+    const e = new Error('오늘 기록만 체크/해제할 수 있습니다.');
+    e.name = 'BadRequestError';
+    e.status = 400;
+    throw e;
+  }
   const updated = await prisma.habit.update({
     where: { id: habitId },
     data: { isDone: !target.isDone },
