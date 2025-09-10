@@ -241,6 +241,12 @@ export async function toggleHabitService({ habitId }) {
     const e = new Error('해당 습관이 존재하지 않습니다.');
     e.name = 'NotFoundError';
     throw e;
+  } // 교차 검증: 경로의 studyId와 소속이 다르면 거부
+  if (studyId && target.habitHistory.studyId !== studyId) {
+    const e = new Error('잘못된 경로 파라미터입니다.');
+    e.name = 'BadRequestError';
+    e.status = 400;
+    throw e;
   }
 
   // 2) 스터디 인증

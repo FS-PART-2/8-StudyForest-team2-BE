@@ -109,8 +109,8 @@ async function createTodayHabitsController(req, res, next) {
 async function toggleHabitController(req, res) {
   try {
     const habitId = parsePositiveParam(req, 'habitId');
-
-    const data = await toggleHabitService({ habitId });
+    const studyId = parsePositiveParam(req, 'studyId');
+    const data = await toggleHabitService({ studyId, habitId });
     res.set('Cache-Control', 'no-store');
     return res.json(data);
   } catch (err) {
