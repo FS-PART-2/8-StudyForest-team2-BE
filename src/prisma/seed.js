@@ -213,10 +213,6 @@ async function seedPerStudy(study, emojis) {
       ],
     });
 
-    await tx.focus.create({
-      data: { setTime: faker.date.soon({ days: 3 }), studyId: study.id },
-    });
-
     await tx.point.create({
       data: {
         point: faker.number.int({ min: 5, max: 300 }),
@@ -278,10 +274,6 @@ async function createTestStudy(emojis, customHabits = []) {
       date: new Date(baseDate.getTime() - i * 24 * 60 * 60 * 1000), // 날짜 분산
       habitHistoryId: habitHistory.id,
     })),
-  });
-
-  await prisma.focus.create({
-    data: { setTime: faker.date.soon({ days: 3 }), studyId: study.id },
   });
 
   const awarded = faker.number.int({ min: 5, max: 300 });
