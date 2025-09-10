@@ -3,7 +3,7 @@
 # 공통 파라미터 설정
 @base_local = http://localhost:3000/api
 @base_prod = https://eight-studyforest-team2-be.onrender.com/api
-@studyId = 36
+@studyId = 1
 
 ### 1) [로컬] 오늘의 집중 조회 API
 GET {{base_local}}/focus/{{studyId}}
