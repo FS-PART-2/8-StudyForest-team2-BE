@@ -65,13 +65,7 @@ async function createTodayHabitsController(req, res, next) {
   try {
     const studyId = parsePositiveParam(req, 'studyId');
 
-    const headerPwd = req.get('x-study-password');
-    const bodyPwd =
-      typeof req.body?.password === 'string' ? req.body.password : undefined;
-    const password =
-      typeof headerPwd === 'string' && headerPwd.length > 0
-        ? headerPwd
-        : bodyPwd;
+    const password = parsePassword(req);
 
     let titles = [];
     if (Array.isArray(req.body?.habits)) {
@@ -119,13 +113,7 @@ async function toggleHabitController(req, res, next) {
   try {
     const habitId = parsePositiveParam(req, 'habitId');
 
-    const headerPwd = req.get('x-study-password');
-    const bodyPwd =
-      typeof req.body?.password === 'string' ? req.body.password : undefined;
-    const password =
-      typeof headerPwd === 'string' && headerPwd.length > 0
-        ? headerPwd
-        : bodyPwd;
+    const password = parsePassword(req);
 
     const data = await toggleHabitService({ habitId, password });
     res.set('Cache-Control', 'no-store');
@@ -150,13 +138,7 @@ async function getWeekHabitsController(req, res, next) {
   try {
     const studyId = parsePositiveParam(req, 'studyId');
 
-    const headerPwd = req.get('x-study-password');
-    const bodyPwd =
-      typeof req.body?.password === 'string' ? req.body.password : undefined;
-    const password =
-      typeof headerPwd === 'string' && headerPwd.length > 0
-        ? headerPwd
-        : bodyPwd;
+    const password = parsePassword(req);
 
     const dateStr =
       typeof req.query?.date === 'string' ? req.query.date : undefined;

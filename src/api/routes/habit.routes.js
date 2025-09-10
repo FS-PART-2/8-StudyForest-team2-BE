@@ -394,7 +394,7 @@ import {
   getWeekHabitsController,
   renameTodayHabitController,
   deleteTodayHabitController,
-  addTodayHabitController
+  addTodayHabitController,
 } from '../controllers/habit.controllers.js';
 
 const router = express.Router();
@@ -403,42 +403,42 @@ router.use(corsMiddleware); // CORS 미들웨어 적용
 
 // 오늘의 습관 조회
 router.get(
-  '/habits/today/:studyId',
+  '/today/:studyId',
   errorMiddleware.asyncHandler(getTodayHabitsController),
 );
 
 // 습관 일괄 생성
 router.post(
-  '/habits/today/:studyId/bulk',
+  '/today/:studyId/bulk',
   errorMiddleware.asyncHandler(createTodayHabitsController),
 );
 
 // 오늘의 습관 체크/해제 (토글)
 router.patch(
-  '/habits/:habitId/toggle',
+  '/:habitId/toggle',
   errorMiddleware.asyncHandler(toggleHabitController),
 );
 
 // 주간 습관 기록 조회 (?date=YYYY-MM-DD)
 router.get(
-  '/habits/week/:studyId',
+  '/week/:studyId',
   errorMiddleware.asyncHandler(getWeekHabitsController),
 );
 // 오늘의 습관 이름 변경(오늘 포함 과거 전체에 반영)
 router.patch(
-  '/habits/today/:studyId/:habitId',
+  '/today/:studyId/:habitId',
   errorMiddleware.asyncHandler(renameTodayHabitController),
 );
 
 // 오늘부터 습관 종료(삭제) — 과거 기록 보존
 router.delete(
-  '/habits/today/:studyId/:habitId',
+  '/today/:studyId/:habitId',
   errorMiddleware.asyncHandler(deleteTodayHabitController),
 );
 
 // 오늘부터 새로운 습관 추가 — 과거엔 표시 X
 router.post(
-  '/habits/today/:studyId',
+  '/today/:studyId',
   errorMiddleware.asyncHandler(addTodayHabitController),
 );
 
