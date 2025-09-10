@@ -77,9 +77,14 @@ router.use(coreMiddleware); // CORS 미들웨어 적용
  *             properties:
  *               minuteData:
  *                 type: integer
+ *                 minimum: 0
+ *                 description: 분 단위 (0 이상)
  *                 example: 10
  *               secondData:
  *                 type: integer
+ *                 minimum: 0
+ *                 maximum: 59
+ *                 description: 초 단위 (0 이상 59 이하)
  *                 example: 30
  *     responses:
  *       200:
