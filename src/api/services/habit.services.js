@@ -245,6 +245,14 @@ export async function toggleHabitService({ habitId, password }) {
   });
 
   // 3) 토글
+  const { startUtc, endUtc } = getKSTDayRange();
+  const isTodayKST = target.date >= startUtc && target.date < endUtc;
+  if (!isTodayKST) {
+    const e = new Error('오늘 기록만 체크/해제할 수 있습니다.');
+    e.name = 'BadRequestError';
+    e.status = 400;
+    throw e;
+  }
   const updated = await prisma.habit.update({
     where: { id: habitId },
     data: { isDone: !target.isDone },
@@ -376,14 +384,14 @@ export async function renameTodayHabitService({
   newTitle,
 }) {
   await assertStudyWithPassword({ studyId, password });
-  const { endUtc } = getKSTDayRange(); // 오늘 24:00(KST) 기준
+  const { startUtc, endUtc } = getKSTDayRange(); // 오늘 24:00(KST) 기준
 
   return await prisma.$transaction(async tx => {
     // 1) 오늘 습관(=기준 습관) 찾기 + 소속 검증
     const base = await tx.habit.findFirst({
       where: {
         id: habitId,
-        date: { lt: endUtc }, // 오늘(포함) 레코드여야 함
+        date: { gte: startUtc, lt: endUtc }, // 오늘(포함) 레코드여야 함
         habitHistory: { is: { studyId } },
       },
       select: { id: true, habit: true, habitHistoryId: true, date: true },
@@ -399,7 +407,7 @@ export async function renameTodayHabitService({
       where: {
         habitHistoryId: base.habitHistoryId,
         habit: newTitle,
-        date: { lt: endUtc },
+        date: { gte: startUtc, lt: endUtc },
       },
       select: { id: true, date: true },
     });
@@ -415,7 +423,7 @@ export async function renameTodayHabitService({
       where: {
         habitHistoryId: base.habitHistoryId,
         habit: base.habit,
-        date: { lt: endUtc },
+        date: { gte: startUtc, lt: endUtc },
       },
       select: { id: true },
     });
@@ -529,6 +537,9 @@ export async function addTodayHabitService({ studyId, password, title }) {
       if (err?.code === 'P2002') {
         const e = new Error('오늘 이미 같은 이름의 습관이 존재합니다.');
         e.name = 'ConflictError';
+
+        e.status = 409;
+
         throw e;
       }
       throw err;
