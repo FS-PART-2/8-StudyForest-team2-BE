@@ -492,7 +492,7 @@ export async function addTodayHabitService({ studyId, password, title }) {
     }
 
     // 2) 오늘 중복 검사 (unique: [habitHistoryId, date, habit])
-    const dup = await prisma.habit.findFirst({
+    const dup = await tx.habit.findFirst({
       where: {
         habitHistoryId: hh.id,
         date: { gte: startUtc, lt: endUtc },
