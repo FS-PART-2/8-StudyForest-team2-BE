@@ -492,7 +492,7 @@ export async function addTodayHabitService({ studyId, password, title }) {
     }
 
     // 2) 오늘 중복 검사 (unique: [habitHistoryId, date, habit])
-    const dup = await prisma.habit.findFirst({
+    const dup = await tx.habit.findFirst({
       where: {
         habitHistoryId: hh.id,
         date: { gte: startUtc, lt: endUtc },
@@ -507,22 +507,32 @@ export async function addTodayHabitService({ studyId, password, title }) {
     }
 
     // 3) 오늘 레코드 생성
-    const created = await tx.habit.create({
-      data: {
-        habitHistoryId: hh.id,
-        habit: title.trim(),
-        date: new Date(startUtc),
-        isDone: false,
-      },
-      select: {
-        id: true,
-        habit: true,
-        date: true,
-        isDone: true,
-        habitHistoryId: true,
-        createdAt: true,
-      },
-    });
+    let created;
+    try {
+      created = await tx.habit.create({
+        data: {
+          habitHistoryId: hh.id,
+          habit: title.trim(),
+          date: new Date(startUtc),
+          isDone: false,
+        },
+        select: {
+          id: true,
+          habit: true,
+          date: true,
+          isDone: true,
+          habitHistoryId: true,
+          createdAt: true,
+        },
+      });
+    } catch (err) {
+      if (err?.code === 'P2002') {
+        const e = new Error('오늘 이미 같은 이름의 습관이 존재합니다.');
+        e.name = 'ConflictError';
+        throw e;
+      }
+      throw err;
+    }
 
     return {
       created: {
