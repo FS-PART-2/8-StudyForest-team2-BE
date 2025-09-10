@@ -36,98 +36,217 @@ async function serviceGetStudy() {
 }
 
 async function serviceStudyList(options) {
-  const { offset, limit, keyword, pointOrder, recentOrder, isActive } = options;
-  const studyWhere = {
-    isActive: isActive,
-    ...(keyword
-      ? {
-          OR: [
-            { nick: { contains: keyword, mode: 'insensitive' } },
-            { name: { contains: keyword, mode: 'insensitive' } },
-            { content: { contains: keyword, mode: 'insensitive' } },
-          ],
-        }
-      : {}),
-  };
+  // 0) 파라미터 정규화
+  const rawOffset = options.offset;
+  const rawLimit = options.limit;
+  const rawSort = options.sort;
+  const rawIsActive = options.isActive;
+  const rawKeyword = options.keyword;
+
+  const offset =
+    typeof rawOffset === 'number' &&
+    Number.isInteger(rawOffset) &&
+    rawOffset >= 0
+      ? rawOffset
+      : 0;
+  const limit =
+    typeof rawLimit === 'number' &&
+    Number.isInteger(rawLimit) &&
+    rawLimit > 0 &&
+    rawLimit <= 50
+      ? rawLimit
+      : 6;
+  const sort = typeof rawSort === 'string' ? rawSort : 'recent';
+
+  const hasIsActive = typeof rawIsActive === 'boolean';
+  const isActiveVal = hasIsActive ? rawIsActive : undefined;
+  const keyword = typeof rawKeyword === 'string' ? rawKeyword : '';
 
   try {
-    // 1) Point를 studyId로 groupBy: 최댓값(value) 기준 정렬 + 페이지네이션
-    const pointAgg = await prisma.point.groupBy({
-      by: ['studyId'],
-      where: { study: studyWhere }, // Point -> Study 역참조명: study
-      _max: { point: true },
-      orderBy: { _max: { point: pointOrder === 'asc' ? 'asc' : 'desc' } },
-      skip: offset,
-      take: Math.min(limit, 50),
-    });
+    // 1) where 구성
+    const studyWhere = {};
+    if (hasIsActive) studyWhere.isActive = isActiveVal;
+    if (keyword.trim() !== '') {
+      studyWhere.OR = [
+        { name: { contains: keyword, mode: 'insensitive' } },
+        { content: { contains: keyword, mode: 'insensitive' } },
+      ];
+    }
 
-    const orderedIds = pointAgg.map(r => r.studyId);
+    // ───────────────────────────────────────────────────
+    // A. 시간 정렬: recent/old → createdAt 단일 정렬
+    // ───────────────────────────────────────────────────
+    if (sort === 'recent' || sort === 'old') {
+      const orderBy =
+        sort === 'old' ? { createdAt: 'asc' } : { createdAt: 'desc' };
 
-    // 2) 상세 Study 조회
-    const studiesRaw = await prisma.study.findMany({
-      where: { id: { in: orderedIds } },
-      select: {
-        id: true,
-        nick: true,
-        name: true,
-        content: true,
-        img: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true,
-        studyEmojis: {
-          orderBy: [{ count: 'desc' }, { emojiId: 'asc' }],
-          take: 3,
+      const [rows, totalCount] = await Promise.all([
+        prisma.study.findMany({
+          where: studyWhere,
+          orderBy: [orderBy],
+          skip: offset,
+          take: limit < 50 ? limit : 50,
           select: {
-            count: true,
-            emoji: { select: { id: true, symbol: true } },
+            id: true,
+            nick: true,
+            name: true,
+            content: true,
+            img: true,
+            isActive: true,
+            createdAt: true,
+            updatedAt: true,
+            studyEmojis: {
+              orderBy: [{ count: 'desc' }, { emojiId: 'asc' }],
+              take: 3,
+              select: {
+                count: true,
+                emoji: { select: { id: true, symbol: true } },
+              },
+            },
           },
-        },
-        // 필요 시 최소 필드만
-        points: { select: { value: true } },
-      },
-    });
+        }),
+        prisma.study.count({ where: studyWhere }),
+      ]);
 
-    // 원래 정렬 순서 유지 + createdAt 타이브레이크 적용(동점일 때)
-    const scoreByStudyId = new Map(
-      pointAgg.map(r => [r.studyId, r._sum.value ?? 0]),
-    );
-    const mapById = new Map(studiesRaw.map(s => [s.id, s]));
-    orderedIds
-      .map(id => mapById.get(id))
-      .filter(Boolean)
-      .sort((a, b) => {
-        const va = scoreByStudyId.get(a.id) ?? 0;
-        const vb = scoreByStudyId.get(b.id) ?? 0;
-        if (va !== vb) return pointOrder === 'asc' ? va - vb : vb - va;
-        return recentOrder === 'recent'
-          ? new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          : new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      // 총합 포인트(point) 보강
+      const ids = rows.map(s => s.id);
+      let sumMap = new Map();
+      if (ids.length > 0) {
+        const sums = await prisma.point.groupBy({
+          by: ['studyId'],
+          where: { studyId: { in: ids } },
+          _sum: { point: true },
+        });
+        sumMap = new Map(
+          sums.map(r => {
+            const val =
+              r._sum && typeof r._sum.point === 'number' ? r._sum.point : 0;
+            return [r.studyId, val];
+          }),
+        );
+      }
+      const enriched = rows.map(s => {
+        const sum = sumMap.has(s.id) ? sumMap.get(s.id) : 0;
+        return { ...s, point: sum };
       });
 
-    const totalCount = await prisma.study.count({ where: studyWhere });
-    const normalizedById = new Map(
-      studiesRaw.map(study => [
-        study.id,
-        {
-          ...study,
-          // studyEmojis 구조 변환
-          studyEmojis: study.studyEmojis.map(e => ({
-            id: e.emoji.id,
-            count: e.count,
-            symbol: e.emoji.symbol,
-          })),
-          // points 배열 → 합계 또는 0
-          points: scoreByStudyId.get(study.id) ?? 0,
+      return { studies: enriched, totalCount };
+    }
+
+    // ───────────────────────────────────────────────────
+    // B. 포인트 정렬: points_desc/points_asc
+    //    Prisma 6.15 제약으로 relation-aggregate orderBy 미지원 → groupBy 우회
+    // ───────────────────────────────────────────────────
+    const pointOrder = sort === 'points_asc' ? 'asc' : 'desc';
+
+    // 1단계: 포인트가 있는 스터디를 point 합계로 정렬하여 페이지 자르기
+    const page = await prisma.point.groupBy({
+      by: ['studyId'],
+      where: { study: studyWhere },
+      _sum: { point: true },
+      orderBy: { _sum: { point: pointOrder } },
+      skip: offset,
+      take: limit < 50 ? limit : 50,
+    });
+    const orderedIds = page.map(r => r.studyId);
+
+    // 2단계: 해당 Study 조회(순서 복원)
+    let groupRows = [];
+    if (orderedIds.length > 0) {
+      const rows = await prisma.study.findMany({
+        where: { id: { in: orderedIds } }, // groupBy에 studyWhere 이미 반영됨
+        select: {
+          id: true,
+          nick: true,
+          name: true,
+          content: true,
+          img: true,
+          isActive: true,
+          createdAt: true,
+          updatedAt: true,
+          studyEmojis: {
+            orderBy: [{ count: 'desc' }, { emojiId: 'asc' }],
+            take: 3,
+            select: {
+              count: true,
+              emoji: { select: { id: true, symbol: true } },
+            },
+          },
         },
-      ]),
-    );
+      });
+      const map = new Map(rows.map(r => [r.id, r]));
+      groupRows = orderedIds.map(id => map.get(id)).filter(Boolean);
+    }
 
-    const studies = orderedIds
-      .map(id => normalizedById.get(id))
-      .filter(Boolean);
+    // 3단계: 페이지 부족 시 포인트 0 스터디 보강(정렬 1가지만 유지 → 단순 take)
+    const deficit = limit - groupRows.length;
+    let fillerRows = [];
+    if (deficit > 0) {
+      const notIn = orderedIds.length > 0 ? { notIn: orderedIds } : undefined;
+      const whereFiller = { ...studyWhere };
+      if (notIn) whereFiller.id = notIn;
 
-    return { studies, totalCount };
+      fillerRows = await prisma.study.findMany({
+        where: whereFiller,
+        take: deficit,
+        select: {
+          id: true,
+          nick: true,
+          name: true,
+          content: true,
+          img: true,
+          isActive: true,
+          createdAt: true,
+          updatedAt: true,
+          studyEmojis: {
+            orderBy: [{ count: 'desc' }, { emojiId: 'asc' }],
+            take: 3,
+            select: {
+              count: true,
+              emoji: { select: { id: true, symbol: true } },
+            },
+          },
+        },
+      });
+    }
+
+    // 합치기
+    let merged = groupRows.concat(fillerRows);
+
+    // 총합 포인트 매핑
+    const ids = merged.map(s => s.id);
+    let sumMap = new Map();
+    if (ids.length > 0) {
+      const sums = await prisma.point.groupBy({
+        by: ['studyId'],
+        where: { studyId: { in: ids } },
+        _sum: { point: true },
+      });
+      sumMap = new Map(
+        sums.map(r => {
+          const val =
+            // eslint-disable-next-line no-underscore-dangle
+            r._sum && typeof r._sum.point === 'number' ? r._sum.point : 0;
+          return [r.studyId, val];
+        }),
+      );
+    }
+    merged = merged.map(s => {
+      const sum = sumMap.has(s.id) ? sumMap.get(s.id) : 0;
+      return { ...s, point: sum };
+    });
+
+    // 최종 정렬: 포인트 단일 정렬만 적용(충돌 방지)
+    const dir = pointOrder === 'asc' ? 1 : -1;
+    merged = merged.sort((a, b) => {
+      const pa = typeof a.point === 'number' ? a.point : 0;
+      const pb = typeof b.point === 'number' ? b.point : 0;
+      if (pa === pb) return 0;
+      return (pa - pb) * dir;
+    });
+
+    const totalCount = await prisma.study.count({ where: studyWhere });
+    return { studies: merged, totalCount };
   } catch (error) {
     console.log(error, '가 발생했습니다.');
     throw error;
