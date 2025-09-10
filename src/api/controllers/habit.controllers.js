@@ -24,27 +24,25 @@ function parsePositiveParam(req, name) {
   return n;
 }
 
-function parsePassword(req) {
-  const headerPwd = req.get('x-study-password');
-  const bodyPwd =
-    typeof req.body?.password === 'string' ? req.body.password : undefined;
-  const password =
-    typeof headerPwd === 'string' && headerPwd.length > 0 ? headerPwd : bodyPwd;
-  if (!password) {
-    const e = new Error('비밀번호가 필요합니다.');
-    e.status = 400;
-    throw e;
-  }
-  return password;
-}
+// function parsePassword(req) {
+//   const headerPwd = req.get('x-study-password');
+//   const bodyPwd =
+//     typeof req.body?.password === 'string' ? req.body.password : undefined;
+//   const password =
+//     typeof headerPwd === 'string' && headerPwd.length > 0 ? headerPwd : bodyPwd;
+//   if (!password) {
+//     const e = new Error('비밀번호가 필요합니다.');
+//     e.status = 400;
+//     throw e;
+//   }
+//   return password;
+// }
 /*오늘의 습관 조회 */
 async function getTodayHabitsController(req, res, next) {
   try {
     const studyId = parsePositiveParam(req, 'studyId');
-    const password = parsePassword(req);
-    const data = await getTodayHabitsService({ studyId, password });
+    const data = await getTodayHabitsService({ studyId });
     res.set('Cache-Control', 'no-store');
-    res.vary('x-study-password');
     return res.json(data);
   } catch (err) {
     if (err.name === 'UnauthorizedError') {

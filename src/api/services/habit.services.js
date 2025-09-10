@@ -75,44 +75,44 @@ function getKSTWeekRange(dateInput /* string|Date|undefined */) {
  * 스터디 + 비밀번호 검증 (argon2/평문 seed 지원)
  * - 컨트롤러에서 password 누락은 400으로 걸러지므로 여기서는 불일치만 401 처리
  */
-async function assertStudyWithPassword({ studyId, password }) {
-  const study = await prisma.study.findUnique({
-    where: { id: studyId },
-    select: { id: true, name: true, password: true, isActive: true },
-  });
-  if (!study) {
-    const e = new Error('해당 스터디가 존재하지 않습니다.');
-    e.name = 'NotFoundError';
-    throw e;
-  }
-  if (!study.password) {
-    // 비번이 설정되지 않은 스터디는 정책상 인증 불가로 처리
-    const e = new Error('비밀번호가 필요합니다.');
-    e.name = 'UnauthorizedError';
-    throw e;
-  }
+// async function assertStudyWithPassword({ studyId, password }) {
+//   const study = await prisma.study.findUnique({
+//     where: { id: studyId },
+//     select: { id: true, name: true, password: true, isActive: true },
+//   });
+//   if (!study) {
+//     const e = new Error('해당 스터디가 존재하지 않습니다.');
+//     e.name = 'NotFoundError';
+//     throw e;
+//   }
+//   if (!study.password) {
+//     // 비번이 설정되지 않은 스터디는 정책상 인증 불가로 처리
+//     const e = new Error('비밀번호가 필요합니다.');
+//     e.name = 'UnauthorizedError';
+//     throw e;
+//   }
 
-  let ok = false;
-  const hash = study.password ?? '';
-  try {
-    if (typeof hash === 'string' && hash.startsWith('$argon2')) {
-      ok = await argon2.verify(hash, password);
-    } else {
-      // seed 등 평문 대비
-      ok = password === hash;
-    }
-  } catch {
-    ok = false;
-  }
+//   let ok = false;
+//   const hash = study.password ?? '';
+//   try {
+//     if (typeof hash === 'string' && hash.startsWith('$argon2')) {
+//       ok = await argon2.verify(hash, password);
+//     } else {
+//       // seed 등 평문 대비
+//       ok = password === hash;
+//     }
+//   } catch {
+//     ok = false;
+//   }
 
-  if (!ok) {
-    const e = new Error('비밀번호가 일치하지 않습니다.');
-    e.name = 'UnauthorizedError';
-    throw e;
-  }
+//   if (!ok) {
+//     const e = new Error('비밀번호가 일치하지 않습니다.');
+//     e.name = 'UnauthorizedError';
+//     throw e;
+//   }
 
-  return study;
-}
+//   return study;
+// }
 async function assertStudyExists(studyId) {
   const study = await prisma.study.findUnique({
     where: { id: studyId },
@@ -127,9 +127,9 @@ async function assertStudyExists(studyId) {
 }
 
 /*  GET 오늘의 습관 조회 */
-export default async function getTodayHabitsService({ studyId, password }) {
+export default async function getTodayHabitsService({ studyId }) {
   // 1) 인증
-  const study = await assertStudyWithPassword({ studyId, password });
+  const study = await assertStudyExists(studyId);
 
   // 2) 오늘 범위 계산 (KST)
   const { startUtc, endUtc, nowKstIso, kstDateStr } = getKSTDayRange();
@@ -571,4 +571,4 @@ export async function addTodayHabitService({ studyId, title }) {
     };
   });
 }
-export { getKSTDayRange, getKSTWeekRange, assertStudyWithPassword };
+export { getKSTDayRange, getKSTWeekRange, assertStudyExists };
