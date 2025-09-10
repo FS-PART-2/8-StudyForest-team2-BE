@@ -82,9 +82,8 @@ async function createTodayHabitsController(req, res, next) {
       });
     }
 
-    const data = await createTodayHabitsService({ studyId, password, titles });
+    const data = await createTodayHabitsService({ studyId, titles });
     res.set('Cache-Control', 'no-store');
-    res.vary('x-study-password');
     return res.status(201).json(data);
   } catch (err) {
     if (err.name === 'UnauthorizedError') {
@@ -107,13 +106,12 @@ async function createTodayHabitsController(req, res, next) {
 
 /** 오늘의 습관 체크/해제 (토글) */
 
-async function toggleHabitController(req, res, next) {
+async function toggleHabitController(req, res) {
   try {
     const habitId = parsePositiveParam(req, 'habitId');
 
-    const data = await toggleHabitService({ habitId, password });
+    const data = await toggleHabitService({ habitId });
     res.set('Cache-Control', 'no-store');
-    res.vary('x-study-password');
     return res.json(data);
   } catch (err) {
     if (err.name === 'UnauthorizedError') {
@@ -130,16 +128,15 @@ async function toggleHabitController(req, res, next) {
 
 /* 주간 습관 기록 조회*/
 
-async function getWeekHabitsController(req, res, next) {
+async function getWeekHabitsController(req, res) {
   try {
     const studyId = parsePositiveParam(req, 'studyId');
 
     const dateStr =
       typeof req.query?.date === 'string' ? req.query.date : undefined;
 
-    const data = await getWeekHabitsService({ studyId, password, dateStr });
+    const data = await getWeekHabitsService({ studyId, dateStr });
     res.set('Cache-Control', 'no-store');
-    res.vary('x-study-password');
     return res.json(data);
   } catch (err) {
     if (err.name === 'UnauthorizedError') {
@@ -166,12 +163,10 @@ async function renameTodayHabitController(req, res) {
   try {
     const result = await renameTodayHabitService({
       studyId,
-      password,
       habitId,
       newTitle,
     });
     res.set('Cache-Control', 'no-store');
-    res.vary('x-study-password');
     return res.json(result);
   } catch (err) {
     if (err.name === 'UnauthorizedError')
@@ -193,11 +188,9 @@ async function deleteTodayHabitController(req, res) {
   try {
     const result = await deleteTodayHabitService({
       studyId,
-      password,
       habitId,
     });
     res.set('Cache-Control', 'no-store');
-    res.vary('x-study-password');
     return res.json(result);
   } catch (err) {
     if (err.name === 'UnauthorizedError')
@@ -219,9 +212,8 @@ async function addTodayHabitController(req, res) {
   }
 
   try {
-    const result = await addTodayHabitService({ studyId, password, title });
+    const result = await addTodayHabitService({ studyId, title });
     res.set('Cache-Control', 'no-store');
-    res.vary('x-study-password');
     return res.status(201).json(result);
   } catch (err) {
     if (err.name === 'UnauthorizedError')
