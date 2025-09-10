@@ -404,10 +404,15 @@ export async function renameTodayHabitService({
       }
 
       // 2) 충돌 검사
+      const normalizedNew = newTitle.trim();
+      // 동일 값이면 갱신 없이 성공 처리
+      if (normalizedNew === base.habit) {
+        return { updated: 0, newTitle: base.habit };
+      }
       const conflicts = await tx.habit.findMany({
         where: {
           habitHistoryId: base.habitHistoryId,
-          habit: newTitle,
+          habit: normalizedNew,
           date: { gte: startUtc, lt: endUtc },
         },
         select: { id: true, date: true },
@@ -435,7 +440,7 @@ export async function renameTodayHabitService({
       // 4) 일괄 변경
       const updated = await tx.habit.updateMany({
         where: { id: { in: targets.map(t => t.id) } },
-        data: { habit: newTitle },
+        data: { habit: normalizedNew },
       });
 
       return { updated: updated.count, newTitle };
