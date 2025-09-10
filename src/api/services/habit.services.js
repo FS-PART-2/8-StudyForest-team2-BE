@@ -244,7 +244,7 @@ export async function toggleHabitService({ habitId }) {
   }
 
   // 2) 스터디 인증
-  await assertStudyExists(studyId);
+  await assertStudyExists(target.habitHistory.studyId));
 
   // 3) 토글
   const { startUtc, endUtc } = getKSTDayRange();
@@ -302,7 +302,7 @@ export async function toggleHabitService({ habitId }) {
 
 /* GET 주간 습관 기록 조회 (KST 기준으로 days 키 통일) */
 export async function getWeekHabitsService({ studyId, dateStr }) {
-  const study = await assertStudyExists({ studyId });
+  const study = await assertStudyExists(studyId);
 
   const { weekStartUtc, weekEndUtc, weekDateOnly } = getKSTWeekRange(dateStr);
 
@@ -381,7 +381,6 @@ export async function getWeekHabitsService({ studyId, dateStr }) {
 // 오늘의 습관 이름 수정
 export async function renameTodayHabitService({
   studyId,
-
   habitId,
   newTitle,
 }) {
