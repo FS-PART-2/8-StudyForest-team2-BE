@@ -33,7 +33,7 @@ Content-Type: application/json
   "title": "단어 50개"
 }
 
-### 6) 오늘의 습관 이름 변경 (오늘 포함 과거 전체 반영)
+### 6) 오늘의 습관 이름 변경 
 @renameHabitId = 15
 PATCH {{base}}/habits/today/{{studyId}}/{{renameHabitId}}
 Content-Type: application/json
