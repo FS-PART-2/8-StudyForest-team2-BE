@@ -4,12 +4,19 @@ import focusService from '../services/focus.services.js';
 
 async function controlUpdateFocus(req, res) {
   /* 파라미터/바디 파싱 및 입력 검증 */
-  const { studyId } = req.params;
+  const studyId = Number(req.params.studyId);
+  if (!Number.isFinite(studyId) || studyId <= 0) {
+    const error = new Error('유효하지 않은 studyId 입니다.');
+    error.status = 400;
+    error.code = 'INVALID_STUDY_ID';
+    throw error;
+  }
 
   const points = Number(req.body.totalPoints);
-  if (!points || points < 0) {
+  if (!Number.isFinite(points) || points < 0) {
     const error = new Error('point 값은 0 이상의 숫자여야 합니다.');
     error.status = 400;
+    error.code = 'INVALID_POINTS';
     throw error;
   }
 

@@ -24,6 +24,5 @@ PATCH {{base_prod}}/focus/{{studyId}}
 Content-Type: application/json
 
 {
-  "minuteData": 10,
-  "secondData": 0
+  "totalPoints": 50
 }

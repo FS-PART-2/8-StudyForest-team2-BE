@@ -3,23 +3,33 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function serviceUpdateFocus(point, studyId) {
-  const updateResult = await prisma.point.updateMany({
-    where: { studyId: Number(studyId) },
-    data: { point: { increment: point } },
-  });
+  const numericStudyId = Number(studyId);
+  const numericPoint = Number(point);
 
-  if (updateResult.count === 0) {
-    const error = new Error(
-      `studyId ${studyId}에 해당하는 포인트 기록이 없습니다.`,
-    );
-    error.status = 404;
-    throw error;
+  // 포인트 값 유효성 검사
+  if (!Number.isFinite(numericPoint) || numericPoint < 0) {
+    const err = new Error('point 값은 0 이상의 숫자여야 합니다.');
+    err.status = 400;
+    err.code = 'INVALID_POINT';
+    throw err;
   }
 
-  return prisma.point.findFirst({
-    where: { studyId: Number(studyId) },
-    select: { point: true },
-  });
+  // 1) 포인트 이벤트 1건 추가
+  // 2) 총합 집계  (트랜잭션으로 원자성 보장)
+  const [, agg] = await prisma.$transaction([
+    prisma.point.create({
+      data: { studyId: numericStudyId, point: numericPoint },
+      select: { id: true },
+    }),
+    prisma.point.aggregate({
+      where: { studyId: numericStudyId },
+      _sum: { point: true },
+    }),
+  ]);
+
+  // 갱신된 누적 포인트 반환
+  // eslint-disable-next-line no-underscore-dangle
+  return { point: agg._sum.point };
 }
 
 export default {
