@@ -376,6 +376,7 @@ import corsMiddleware from '../../common/cors.js';
 // 컨트롤러
 import errorMiddleware from '../../common/error.js'; // 에러 케이스 추가는 여기서 관리
 import {
+  getHabitsQueryController,
   getTodayHabitsController,
   createTodayHabitsController,
   toggleHabitController,
@@ -388,6 +389,7 @@ import {
 const router = express.Router();
 
 router.use(corsMiddleware); // CORS 미들웨어 적용
+router.get('/', errorMiddleware.asyncHandler(getHabitsQueryController));
 
 // 오늘의 습관 조회
 router.get(

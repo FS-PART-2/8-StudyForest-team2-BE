@@ -2,7 +2,7 @@
 // 데이터 접근 계층 호출(Prisma/Mongoose/Raw SQL)
 
 import { PrismaClient } from '@prisma/client';
-import argon2 from 'argon2';
+// import argon2 from 'argon2';
 
 const prisma = new PrismaClient();
 
@@ -565,4 +565,48 @@ export async function addTodayHabitService({ studyId, title }) {
     };
   });
 }
+
+export async function getDailyHabitsService({ studyId, dateStr }) {
+  // 1) 스터디 존재 확인
+  const study = await assertStudyExists(studyId);
+
+  // 2) 날짜 범위(KST 하루) 계산: dateStr 있으면 그 날짜, 없으면 오늘
+  const base = dateStr ? new Date(dateStr) : new Date();
+  const { startUtc, endUtc, nowKstIso, kstDateStr } = getKSTDayRange(base);
+
+  // 3) 해당 날짜의 습관 조회
+  const habits = await prisma.habit.findMany({
+    where: {
+      date: { gte: startUtc, lt: endUtc },
+      habitHistory: { is: { studyId } },
+    },
+    select: {
+      id: true,
+      habit: true,
+      isDone: true,
+      date: true,
+      habitHistoryId: true,
+      createdAt: true,
+    },
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+  });
+
+  return {
+    study: { id: study.id, name: study.name, isActive: study.isActive },
+    now: nowKstIso,
+    date: kstDateStr,
+    habits: habits.map(h => ({
+      habitId: h.id,
+      title: h.habit,
+      isDone: h.isDone,
+      date: h.date,
+      habitHistoryId: h.habitHistoryId,
+    })),
+    links: {
+      focusToday: `/studies/${studyId}/focus-today`,
+      home: `/studies/${studyId}`,
+    },
+  };
+}
+
 export { getKSTDayRange, getKSTWeekRange, assertStudyExists };

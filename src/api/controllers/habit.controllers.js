@@ -1,6 +1,7 @@
 // 요청 파싱(params/query) + 입력 검증 + 서비스 호출 + 에러 변환
 
 import getTodayHabitsService, {
+  getDailyHabitsService,
   createTodayHabitsService,
   toggleHabitService,
   getWeekHabitsService,
@@ -222,8 +223,44 @@ async function addTodayHabitController(req, res) {
     return res.status(500).json({ message: 'SERVER_ERROR' });
   }
 }
+async function getHabitsQueryController(req, res) {
+  try {
+    const rawStudyId = req.query?.studyId;
+    const studyId = Number.parseInt(String(rawStudyId ?? ''), 10);
+    if (!Number.isFinite(studyId) || studyId <= 0) {
+      const e = new Error('studyId는 1 이상의 정수여야 합니다.');
+      e.status = 400;
+      throw e;
+    }
 
+    const dateStr =
+      typeof req.query?.date === 'string' ? req.query.date : undefined;
+
+    // 날짜 유효성(선택): YYYY-MM-DD 형태라면 Date로 파싱 가능
+    if (dateStr && !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      const e = new Error('date는 YYYY-MM-DD 형식이어야 합니다.');
+      e.status = 400;
+      throw e;
+    }
+
+    const data = await getDailyHabitsService({ studyId, dateStr });
+
+    res.set('Cache-Control', 'no-store');
+    return res.json(data);
+  } catch (err) {
+    if (err.name === 'UnauthorizedError') {
+      return res.status(401).json({ message: err.message });
+    }
+    if (err.name === 'NotFoundError') {
+      return res.status(404).json({ message: err.message });
+    }
+    return res
+      .status(err.status || 500)
+      .json({ message: err.message || 'SERVER_ERROR' });
+  }
+}
 export {
+  getHabitsQueryController,
   getTodayHabitsController,
   createTodayHabitsController,
   toggleHabitController,
