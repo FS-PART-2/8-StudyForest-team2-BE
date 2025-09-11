@@ -10,6 +10,7 @@ const corsOptions = {
     'https://eight-studyforest-team2-be.onrender.com',
     'http://localhost:3000',
     'http://localhost:5173',
+    'http://localhost:4173',
     'https://mindmeld-fe.vercel.app',
     'https://8-study-forest-team2-fe-git-develop-seongeun95s-projects.vercel.app',
     'https://8-study-forest-team2-ccu0vb250-seongeun95s-projects.vercel.app',
