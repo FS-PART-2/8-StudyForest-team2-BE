@@ -68,13 +68,22 @@
  *         - $ref: '#/components/schemas/Study'
  *         - type: object
  *           properties:
- *             _count:
- *               type: object
- *               properties:
- *                 points: { type: integer, example: 12 }
- *                 habitHistories: { type: integer, example: 4 }
- *                 focuses: { type: integer, example: 7 }
- *                 studyEmojis: { type: integer, example: 3 }
+ *             studyEmojis:
+ *               type: array
+ *               description: 스터디 이모지 집계(카운트 내림차순, 동일 시 emojiId 오름차순)
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   count: { type: integer, minimum: 0, example: 9 }
+ *                   emoji:
+ *                     type: object
+ *                     properties:
+ *                       id: { type: integer, example: 1 }
+ *                       symbol: { type: string, example: 🔥 }
+ *              point:
+ *                type: integer
+ *                minimum: 0
+ *                description: 포인트 총합
  *
  *     StudyListResponse:
  *       type: object
@@ -100,11 +109,8 @@
  *             isActive: true
  *             createdAt: 2025-09-01T12:32:32.567Z
  *             updatedAt: 2025-09-01T12:32:32.567Z
- *             _count:
- *               points: 1
- *               habitHistories: 1
- *               focuses: 2
- *               studyEmojis: 1
+ *             studyEmojis: []
+ *             point: 0
  *         totalCount: 14
  *
  *     StudyDetail:
