@@ -80,10 +80,10 @@
  *                     properties:
  *                       id: { type: integer, example: 1 }
  *                       symbol: { type: string, example: 🔥 }
- *              point:
- *                type: integer
- *                minimum: 0
- *                description: 포인트 총합
+ *             point:
+ *               type: integer
+ *               minimum: 0
+ *               description: 포인트 총합
  *
  *     StudyListResponse:
  *       type: object
@@ -625,64 +625,63 @@
 
 /**
  * @swagger
- * /api/studies/{studyId}/emojis/increment:
+ * /api/studies/{studyId}/verify-password:
  *   post:
  *     tags: [Studies]
- *     summary: 스터디 이모지 카운트 증가
- *     description: 요청 본문의 id(이모지 심볼/식별자)와 count(증가 수량)를 사용합니다.
+ *     summary: 스터디 비밀번호 검증
+ *     description: 입력한 비밀번호가 해당 스터디의 비밀번호와 일치하는지 확인합니다.
  *     parameters:
  *       - $ref: '#/components/parameters/StudyIdParam'
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
- *           schema: { $ref: '#/components/schemas/EmojiCountInput' }
+ *           schema:
+ *             type: object
+ *             required: [password]
+ *             properties:
+ *               password:
+ *                 type: string
+ *                 description: 입력한 비밀번호
+ *                 example: p@ssW0rd!
  *     responses:
  *       200:
- *         description: 증가 후 최신 레코드
+ *         description: 비밀번호 검증 성공 여부 반환
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/EmojiUpdated' }
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 isPasswordValid:
+ *                   type: boolean
+ *                   description: 비밀번호 일치 여부
+ *             examples:
+ *               success-true:
+ *                 summary: 일치하는 경우
+ *                 value:
+ *                   isPasswordValid: true
+ *               success-false:
+ *                 summary: 불일치하는 경우
+ *                 value:
+ *                   isPasswordValid: false
  *       400:
- *         description: 유효성 오류(id/count 누락/형식 불일치)
+ *         description: 비밀번호 누락
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/ErrorResponse' }
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
- *         description: 대상 스터디 없음
+ *         description: 스터디 또는 비밀번호가 존재하지 않음
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       500:
  *         description: 서버 에러
- */
-
-/**
- * @swagger
- * /api/studies/{studyId}/emojis/decrement:
- *   post:
- *     tags: [Studies]
- *     summary: 스터디 이모지 카운트 감소/삭제
- *     description: 현재 카운트보다 많이 감소 요청 시 레코드가 삭제될 수 있습니다.
- *     parameters:
- *       - $ref: '#/components/parameters/StudyIdParam'
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema: { $ref: '#/components/schemas/EmojiCountInput' }
- *     responses:
- *       200:
- *         description: 감소 결과(감소 또는 삭제)
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/EmojiActionResult' }
- *       400:
- *         description: 유효성 오류(id/count 누락/형식 불일치)
- *         content:
- *           application/json:
- *             schema: { $ref: '#/components/schemas/ErrorResponse' }
- *       404:
- *         description: 대상 스터디 없음
- *       500:
- *         description: 서버 에러
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 
 import express from 'express';
@@ -729,6 +728,11 @@ router.delete(
 router.get(
   '/:studyId',
   errorMiddleware.asyncHandler(studyController.controlStudyDetail),
+);
+
+router.post(
+  '/:studyId/verify-password',
+  errorMiddleware.asyncHandler(studyController.controlStudyVerifyPassword),
 );
 
 // 이모지 횟수 증가 API 엔드포인트

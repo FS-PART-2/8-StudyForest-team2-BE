@@ -408,7 +408,9 @@ async function serviceStudyDetail(studyId) {
 
     // ✅ 안전 접근(?? 미사용): _sum 또는 point가 없으면 0
     const totalPoint =
+      // eslint-disable-next-line no-underscore-dangle
       pointsAgg && pointsAgg._sum && typeof pointsAgg._sum.point === 'number'
+        // eslint-disable-next-line no-underscore-dangle
         ? pointsAgg._sum.point
         : 0;
 
@@ -447,6 +449,27 @@ async function serviceEmojiFindOrCreate(emojiSymbol) {
       }
       throw err;
     }
+  } catch (error) {
+    console.log(error, '가 발생했습니다.');
+    throw error;
+  }
+}
+
+async function serviceStudyVerifyPassword(studyId, password) {
+  try {
+    const study = await prisma.study.findUnique({
+      where: { id: studyId },
+      select: { password: true },
+    });
+
+    if (!study) {
+      const err = new Error('스터디의 비밀번호가 존재하지 않습니다.');
+      err.status = 404;
+      err.code = 'STUDY_PASSWORD_NOT_FOUND';
+      throw err;
+    }
+
+    return await argon2.verify(study.password, password);
   } catch (error) {
     console.log(error, '가 발생했습니다.');
     throw error;
@@ -588,6 +611,7 @@ export default {
   serviceStudyUpdate,
   serviceStudyDelete,
   serviceStudyDetail,
+  serviceStudyVerifyPassword,
 
   serviceEmojiIncrement,
   serviceEmojiDecrement,
