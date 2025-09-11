@@ -52,10 +52,9 @@ async function serviceStudyList(options) {
   const limit =
     typeof rawLimit === 'number' &&
     Number.isInteger(rawLimit) &&
-    rawLimit > 0 &&
-    rawLimit <= 50
+    rawLimit >= 0
       ? rawLimit
-      : 6;
+      : 0;
   const sort = typeof rawSort === 'string' ? rawSort : 'recent';
 
   const hasIsActive = typeof rawIsActive === 'boolean';

@@ -6,10 +6,11 @@
 @studyId = 47
 @pwd = 1234
 # 조회 API를 위한 파라미터 설정
+@limit = 100
 @offset = 0
 @order = points_asc
 @isActive = true
-@keyword = 수정
+@keyword =
 
 ### 1) [로컬] 스터디 관리 페이지 조회 (관리자용)
 
@@ -17,11 +18,11 @@ GET {{base_local}}/studies/manage
 
 ### 2) [배포] 스터디 조회 API (offset, pointOrder, recentOrder, isActive, keyword)
 
-GET {{base_prod}}/studies?offset={{offset}}&sort={{order}}&isActive={{isActive}}&keyword={{keyword}}
+GET {{base_prod}}/studies?limit={{limit}}&offset={{offset}}&sort={{order}}&isActive={{isActive}}&keyword={{keyword}}
 
 ### 2) [로컬] 스터디 조회 API (offset, pointOrder, recentOrder, isActive, keyword)
 
-GET {{base_local}}/studies?offset={{offset}}&sort={{order}}&isActive={{isActive}}&keyword={{keyword}}
+GET {{base_local}}/studies?limit={{limit}}&offset={{offset}}&sort={{order}}&isActive={{isActive}}&keyword={{keyword}}
 
 ### 3) [배포] 스터디 생성 API
 
