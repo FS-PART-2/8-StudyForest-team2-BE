@@ -31,8 +31,7 @@ async function controlStudyList(req, res) {
   const limitNum = Number.parseInt(limitStr, 10);
 
   const offset = Number.isInteger(offsetNum) && offsetNum >= 0 ? offsetNum : 0;
-  const limit =
-    Number.isInteger(limitNum) && limitNum > 0 && limitNum <= 50 ? limitNum : 6;
+  const limit = Number.isInteger(limitNum) && limitNum >= 0 ? limitNum : 0;
 
   // 2) 정렬 단일화: sort (recent | old | points_desc | points_asc)
   //    - 한국어 라벨 및 레거시 파라미터(recentOrder/pointOrder)도 매핑 지원
