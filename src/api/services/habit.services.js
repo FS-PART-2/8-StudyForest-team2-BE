@@ -297,6 +297,7 @@ export async function toggleHabitService({ habitId }) {
     isDone: updated.isDone,
     date: updated.date,
     habitHistoryId: updated.habitHistoryId,
+    studyId: target.habitHistory.studyId,
   };
 }
 

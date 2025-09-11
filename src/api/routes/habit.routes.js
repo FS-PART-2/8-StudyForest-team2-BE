@@ -218,6 +218,24 @@
  *         in: path
  *         required: true
  *         schema: { type: integer }
+ *       - name: studyId
+ *         in: query
+ *         required: false
+ *         schema: { type: integer }
+ *         description: '선택값. 안전성 검증용으로만 사용(요청값과 실제 소속 불일치 시 400)'
+ *       - name: x-study-id
+ *         in: header
+ *         required: false
+ *         schema: { type: integer }
+ *         description: '선택값. 안전성 검증용으로만 사용'
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               studyId: { type: integer, description: '선택값. 안전성 검증용' }
  *     responses:
  *       '200':
  *         description: 토글 성공
@@ -233,12 +251,12 @@
  *                   format: date-time
  *                   example: '2025-09-02T00:00:00.000Z'
  *                 habitHistoryId: { type: integer, example: 7 }
+ *                 studyId:        { type: integer, example: 101 }
  *       '400': { description: 잘못된 요청, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' }}}}
  *       '401': { description: 인증 실패,   content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' }}}}
  *       '404': { description: 습관 없음,   content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' }}}}
  *       '500': { description: 서버 오류,   content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' }}}}
  */
-
 /**
  * @swagger
  * /api/habits/week/{studyId}:
@@ -402,7 +420,11 @@ router.post(
   '/today/:studyId/bulk',
   errorMiddleware.asyncHandler(createTodayHabitsController),
 );
-
+// ✅ (선택) 기존 경로 패턴도 임시 지원: /api/habits/today/:studyId/:habitId/toggle
+router.patch(
+  '/today/:studyId/:habitId/toggle',
+  errorMiddleware.asyncHandler(toggleHabitController),
+);
 // 오늘의 습관 체크/해제 (토글)
 router.patch(
   '/:habitId/toggle',

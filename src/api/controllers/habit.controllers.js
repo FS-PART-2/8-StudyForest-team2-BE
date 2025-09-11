@@ -102,13 +102,47 @@ async function createTodayHabitsController(req, res, next) {
       .json({ message: err.message || 'SERVER_ERROR' });
   }
 }
+// ✅ 선택 입력 검증용: 값이 없으면 undefined, 있으면 1 이상의 정수만 통과
+function parseOptionalPositive(n) {
+  if (n === undefined || n === null || n === '') return undefined;
+  const s = String(n);
+  if (!/^\d+$/.test(s)) {
+    const e = new Error('studyId는 1 이상의 정수여야 합니다.');
+    e.status = 400;
+    throw e;
+  }
+  const v = Number.parseInt(s, 10);
+  if (v <= 0) {
+    const e = new Error('studyId는 1 이상의 정수여야 합니다.');
+    e.status = 400;
+    throw e;
+  }
+  return v;
+}
 
 /** 오늘의 습관 체크/해제 (토글) */
 
 async function toggleHabitController(req, res) {
   try {
     const habitId = parsePositiveParam(req, 'habitId');
+    // ✅ 선택적으로 들어오는 studyId 수용 (params > query > body > header)
+    const studyIdOptional = parseOptionalPositive(
+      req.params?.studyId ??
+        req.query?.studyId ??
+        req.body?.studyId ??
+        req.get('x-study-id'),
+    );
+
     const data = await toggleHabitService({ habitId });
+
+    // ✅ 일치성 검사: 선택 studyId가 있으면, 실제 소속 studyId와 비교
+    if (studyIdOptional !== undefined && data.studyId !== studyIdOptional) {
+      const e = new Error(
+        '요청된 studyId와 습관의 소속 스터디가 일치하지 않습니다.',
+      );
+      e.status = 400;
+      throw e;
+    }
     res.set('Cache-Control', 'no-store');
     return res.json(data);
   } catch (err) {
