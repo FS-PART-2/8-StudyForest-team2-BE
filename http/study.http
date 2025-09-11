@@ -3,13 +3,13 @@
 # 공통 파라미터 설정
 @base_local = http://localhost:3000/api
 @base_prod = https://eight-studyforest-team2-be.onrender.com/api
-@studyId = 1
-@pwd = test
+@studyId = 47
+@pwd = 1234
 # 조회 API를 위한 파라미터 설정
 @offset = 0
 @order = points_asc
 @isActive = true
-@keyword =
+@keyword = 수정
 
 ### 1) [로컬] 스터디 관리 페이지 조회 (관리자용)
 
@@ -33,8 +33,8 @@ Content-Type: application/json
     "name": "스터디 생성 테스트",
     "content": "스터디 생성 테스트 중 입니다.",
     "img": "https://avatars.githubusercontent.com/in/347564?s=60&v=4",
-    "password": "1234",
-    "checkPassword": "1234",
+    "password": "{{pwd}}",
+    "checkPassword": "{{pwd}}",
     "isActive": true
 }
 
@@ -48,8 +48,8 @@ Content-Type: application/json
     "name": "스터디 생성 테스트",
     "content": "스터디 생성 테스트 중 입니다.",
     "img": "https://avatars.githubusercontent.com/in/347564?s=60&v=4",
-    "password": "1234",
-    "checkPassword": "1234",
+    "password": "{{pwd}}",
+    "checkPassword": "{{pwd}}",
     "isActive": true
 }
 
@@ -63,7 +63,7 @@ Content-Type: application/json
     "name": "스터디 수정 테스트",
     "content": "스터디 수정 테스트 중 입니다.",
     "img": "https://avatars.githubusercontent.com/in/347564?s=60&v=4",
-    "password": "1234",
+    "password": "{{pwd}}",
     "isActive": true
 }
 
@@ -77,7 +77,7 @@ Content-Type: application/json
     "name": "스터디 수정 테스트",
     "content": "스터디 수정 테스트 중 입니다.",
     "img": "https://avatars.githubusercontent.com/in/347564?s=60&v=4",
-    "password": "1234",
+    "password": "{{pwd}}",
     "isActive": true
 }
 
@@ -87,7 +87,7 @@ DELETE {{base_prod}}/studies/{{studyId}}
 Content-Type: application/json
 
 {
-  "password": "1234"
+  "password": "{{pwd}}"
 }
 
 ### 5) [로컬] 스터디 삭제 API
@@ -96,7 +96,7 @@ DELETE {{base_local}}/studies/{{studyId}}
 Content-Type: application/json
 
 {
-  "password": "1234"
+  "password": "{{pwd}}"
 }
 
 ### 6) [배포] 스터디 단일 조회 API
@@ -106,6 +106,23 @@ GET {{base_prod}}/studies/{{studyId}}
 ### 6) [로컬] 스터디 단일 조회 API
 
 GET {{base_local}}/studies/{{studyId}}
+
+### 7) [로컬] 스터디 비밀번호 검증 API
+
+POST {{base_local}}/studies/{{studyId}}/verify-password
+Content-Type: application/json
+
+{
+  "password": "{{pwd}}"
+}
+
+### 7) [배포] 스터디 비밀번호 검증 API
+POST {{base_prod}}/studies/{{studyId}}/verify-password
+Content-Type: application/json
+
+{
+  "password": "{{pwd}}"
+}
 
 ### 7) [로컬] 이모지 횟수 증가 API
 

@@ -80,10 +80,10 @@
  *                     properties:
  *                       id: { type: integer, example: 1 }
  *                       symbol: { type: string, example: 🔥 }
- *              point:
- *                type: integer
- *                minimum: 0
- *                description: 포인트 총합
+ *             point:
+ *               type: integer
+ *               minimum: 0
+ *               description: 포인트 총합
  *
  *     StudyListResponse:
  *       type: object
@@ -625,33 +625,168 @@
 
 /**
  * @swagger
- * /api/studies/{studyId}/emojis/increment:
+ * /api/studies/{studyId}/verify-password:
  *   post:
  *     tags: [Studies]
- *     summary: 스터디 이모지 카운트 증가
- *     description: 요청 본문의 id(이모지 심볼/식별자)와 count(증가 수량)를 사용합니다.
+ *     summary: 스터디 비밀번호 검증
+ *     description: 입력한 비밀번호가 해당 스터디의 비밀번호와 일치하는지 확인합니다.
  *     parameters:
  *       - $ref: '#/components/parameters/StudyIdParam'
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
- *           schema: { $ref: '#/components/schemas/EmojiCountInput' }
+ *           schema:
+ *             type: object
+ *             required: [password]
+ *             properties:
+ *               password:
+ *                 type: string
+ *                 description: 입력한 비밀번호
+ *                 example: p@ssW0rd!
  *     responses:
  *       200:
- *         description: 증가 후 최신 레코드
+ *         description: 비밀번호 검증 성공 여부 반환
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/EmojiUpdated' }
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 isPasswordValid:
+ *                   type: boolean
+ *                   description: 비밀번호 일치 여부
+ *             examples:
+ *               success-true:
+ *                 summary: 일치하는 경우
+ *                 value:
+ *                   isPasswordValid: true
+ *               success-false:
+ *                 summary: 불일치하는 경우
+ *                 value:
+ *                   isPasswordValid: false
  *       400:
- *         description: 유효성 오류(id/count 누락/형식 불일치)
+ *         description: 비밀번호 누락
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/ErrorResponse' }
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
- *         description: 대상 스터디 없음
+ *         description: 스터디 또는 비밀번호가 존재하지 않음
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       500:
  *         description: 서버 에러
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+
+/**
+ * @swagger
+ * /api/studies/{studyId}/emojis/increment:
+ *   post:
+ *     tags: [Studies]
+ *     summary: 이모지 횟수 증가
+ *     description: 특정 스터디에서 특정 이모지의 클릭 횟수를 증가시킵니다.
+ *     parameters:
+ *       - $ref: '#/components/parameters/StudyIdParam'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - id
+ *               - count
+ *             properties:
+ *               id:
+ *                 type: string
+ *                 description: 이모지 식별자 (유니코드 코드포인트 또는 내부 ID)
+ *                 example: "1f603"
+ *               emoji:
+ *                 type: string
+ *                 description: 실제 이모지 문자 (선택값)
+ *                 example: "😃"
+ *               count:
+ *                 type: integer
+ *                 minimum: 1
+ *                 description: 증가시킬 이모지 개수
+ *                 example: 1
+ *           examples:
+ *             increment-emoji:
+ *               summary: 이모지 증가 예시
+ *               value:
+ *                 id: "1f603"
+ *                 emoji: "😃"
+ *                 count: 1
+ *     responses:
+ *       200:
+ *         description: 이모지 증가 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                   example: 4
+ *                 count:
+ *                   type: integer
+ *                   example: 2
+ *                 createdAt:
+ *                   type: string
+ *                   format: date-time
+ *                   example: "2025-09-11T08:45:11.150Z"
+ *                 updatedAt:
+ *                   type: string
+ *                   format: date-time
+ *                   example: "2025-09-11T08:58:12.678Z"
+ *                 studyId:
+ *                   type: integer
+ *                   example: 5
+ *                 emojiId:
+ *                   type: integer
+ *                   example: 3
+ *                 emoji:
+ *                   type: object
+ *                   properties:
+ *                     symbol:
+ *                       type: string
+ *                       example: "1f603"
+ *             examples:
+ *               success:
+ *                 summary: 성공 응답 예시
+ *                 value:
+ *                   id: 4
+ *                   count: 2
+ *                   createdAt: "2025-09-11T08:45:11.150Z"
+ *                   updatedAt: "2025-09-11T08:58:12.678Z"
+ *                   studyId: 5
+ *                   emojiId: 3
+ *                   emoji:
+ *                     symbol: "1f603"
+ *       400:
+ *         description: 잘못된 입력값 또는 이모지 ID 누락
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: 스터디를 찾을 수 없음
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: 서버 에러
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 
 /**
@@ -659,30 +794,112 @@
  * /api/studies/{studyId}/emojis/decrement:
  *   post:
  *     tags: [Studies]
- *     summary: 스터디 이모지 카운트 감소/삭제
- *     description: 현재 카운트보다 많이 감소 요청 시 레코드가 삭제될 수 있습니다.
+ *     summary: 이모지 횟수 감소
+ *     description: |
+ *       특정 스터디에서 특정 이모지의 클릭 횟수를 감소시킵니다.
+ *       - 감소 결과가 0 이하가 되면 해당 이모지 카운트 레코드는 **삭제**됩니다.
+ *       - 이미 삭제된 상태에서 다시 감소를 요청하면 `deleted: false`와 함께 `reason: "not-exists"`가 반환됩니다.
  *     parameters:
  *       - $ref: '#/components/parameters/StudyIdParam'
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
- *           schema: { $ref: '#/components/schemas/EmojiCountInput' }
+ *           schema:
+ *             type: object
+ *             required: [id, count]
+ *             properties:
+ *               id:
+ *                 type: string
+ *                 description: 이모지 식별자 (유니코드 코드포인트 또는 내부 정수 ID를 문자열로 전달)
+ *                 example: "1f603"
+ *               emoji:
+ *                 type: string
+ *                 description: 실제 이모지 문자 (선택값, 서버 로직에는 필수 아님)
+ *                 example: "😃"
+ *               count:
+ *                 type: integer
+ *                 minimum: 1
+ *                 description: 감소시킬 개수(양의 정수)
+ *                 example: 1
+ *           examples:
+ *             decrement-emoji:
+ *               summary: 이모지 감소 요청 예시
+ *               value:
+ *                 id: "1f603"
+ *                 emoji: "😃"
+ *                 count: 1
  *     responses:
  *       200:
- *         description: 감소 결과(감소 또는 삭제)
+ *         description: 감소 처리 결과
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/EmojiActionResult' }
+ *             schema:
+ *               oneOf:
+ *                 # 감소 후 레코드가 남아 있는 경우(업데이트 결과)
+ *                 - type: object
+ *                   properties:
+ *                     id:        { type: integer, example: 4 }
+ *                     count:     { type: integer, example: 1 }
+ *                     createdAt: { type: string, format: date-time, example: "2025-09-11T08:45:11.150Z" }
+ *                     updatedAt: { type: string, format: date-time, example: "2025-09-11T09:00:38.783Z" }
+ *                     studyId:   { type: integer, example: 5 }
+ *                     emojiId:   { type: integer, example: 3 }
+ *                 # 감소 결과 0 이하로 내려가 삭제된 경우
+ *                 - type: object
+ *                   properties:
+ *                     deleted: { type: boolean, example: true }
+ *                     studyId: { type: integer, example: 5 }
+ *                     emojiId: { type: integer, example: 3 }
+ *                     count:   { type: integer, example: 0 }
+ *                 # 이미 삭제된 상태 등으로 변경사항이 없는 경우
+ *                 - type: object
+ *                   properties:
+ *                     deleted: { type: boolean, example: false }
+ *                     studyId: { type: integer, example: 5 }
+ *                     emojiId: { type: integer, example: 3 }
+ *                     count:   { type: integer, example: 0 }
+ *                     reason:
+ *                       type: string
+ *                       description: 'not-exists | emoji-not-found | race'
+ *                       example: not-exists
+ *             examples:
+ *               success-updated:
+ *                 summary: 감소 성공(레코드 유지)
+ *                 value:
+ *                   id: 4
+ *                   count: 1
+ *                   createdAt: "2025-09-11T08:45:11.150Z"
+ *                   updatedAt: "2025-09-11T09:00:38.783Z"
+ *                   studyId: 5
+ *                   emojiId: 3
+ *               success-deleted:
+ *                 summary: 감소 후 0이 되어 삭제됨
+ *                 value:
+ *                   deleted: true
+ *                   studyId: 5
+ *                   emojiId: 3
+ *                   count: 0
+ *               already-deleted:
+ *                 summary: 이미 삭제된 상태에서 다시 감소 요청
+ *                 value:
+ *                   deleted: false
+ *                   studyId: 5
+ *                   emojiId: 3
+ *                   count: 0
+ *                   reason: "not-exists"
  *       400:
- *         description: 유효성 오류(id/count 누락/형식 불일치)
+ *         description: 잘못된 입력값 (id 누락/형식 오류, count < 1 등)
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/ErrorResponse' }
- *       404:
- *         description: 대상 스터디 없음
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       500:
  *         description: 서버 에러
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 
 import express from 'express';
@@ -729,6 +946,11 @@ router.delete(
 router.get(
   '/:studyId',
   errorMiddleware.asyncHandler(studyController.controlStudyDetail),
+);
+
+router.post(
+  '/:studyId/verify-password',
+  errorMiddleware.asyncHandler(studyController.controlStudyVerifyPassword),
 );
 
 // 이모지 횟수 증가 API 엔드포인트

@@ -214,6 +214,32 @@ async function controlStudyDetail(req, res) {
   res.status(200).json(studyDetail);
 }
 
+// 스터디 비밀번호 검증 API 컨트롤러
+async function controlStudyVerifyPassword(req, res) {
+  /* 쿼리 파라미터 파싱 및 입력 검증 */
+  const studyId = Number.parseInt(req.params.studyId, 10);
+  if (!Number.isFinite(studyId) || studyId <= 0) {
+    const err = new Error('유효하지 않은 스터디 ID입니다.');
+    err.status = 400;
+    err.code = 'INVALID_STUDY_ID';
+    throw err;
+  }
+
+  const { password } = req.body;
+  if (typeof password !== 'string' || password.length === 0) {
+    const err = new Error('비밀번호가 누락되었습니다.');
+    err.status = 400;
+    err.code = 'PASSWORD_REQUIRED';
+    throw err;
+  }
+
+  /* 서비스 호출 */
+  const isPasswordValid = await studyService.serviceStudyVerifyPassword(studyId, password);
+
+  /* 결과 반환 */
+  res.status(200).json({ isPasswordValid });
+}
+
 // 이모지 횟수 증가 API 컨트롤러
 async function controlEmojiIncrement(req, res) {
   /* 쿼리 파라미터 파싱 및 입력 검증 */
@@ -298,6 +324,7 @@ export default {
   controlStudyUpdate,
   controlStudyDelete,
   controlStudyDetail,
+  controlStudyVerifyPassword,
 
   controlEmojiIncrement,
   controlEmojiDecrement,
