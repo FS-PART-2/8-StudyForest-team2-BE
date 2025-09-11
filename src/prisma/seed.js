@@ -110,9 +110,7 @@ async function seedUsers(n = 5) {
 
   const usersWithSecrets = await Promise.all(
     baseNames.map(async name => {
-      const passwordPlain = faker.internet.password({
-        length: faker.number.int({ min: 8, max: 16 }),
-      });
+      const passwordPlain = 'abcd1234';
       const passwordHash = await argon2.hash(passwordPlain);
 
       const refreshTokenPlain = createRefreshTokenPlain();
