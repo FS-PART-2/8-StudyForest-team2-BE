@@ -225,7 +225,7 @@ export async function createTodayHabitsService({ studyId, titles }) {
 }
 
 /* PATCH 오늘의 습관 체크/해제 (토글) */
-export async function toggleHabitService({ studyId, habitId }) {
+export async function toggleHabitService({ habitId }) {
   // 1) 대상 조회
   const target = await prisma.habit.findUnique({
     where: { id: habitId },
@@ -240,11 +240,6 @@ export async function toggleHabitService({ studyId, habitId }) {
   if (!target) {
     const e = new Error('해당 습관이 존재하지 않습니다.');
     e.name = 'NotFoundError';
-    throw e;
-  } // 교차 검증: 경로의 studyId와 소속이 다르면 거부
-  if (studyId && target.habitHistory.studyId !== studyId) {
-    e.name = 'BadRequestError';
-    e.status = 400;
     throw e;
   }
 
