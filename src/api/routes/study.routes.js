@@ -296,14 +296,6 @@
  *         updatedAt: { type: string, format: date-time, example: 2025-09-03T09:11:04.085Z }
  *         studyId:   { type: integer, example: 31 }
  *         emojiId:   { type: integer, example: 11 }
- *         emoji:
- *           type: object
- *           nullable: true
- *           properties:
- *             symbol:
- *               type: string
- *               description: 이모지 코드포인트(16진수) 또는 문자
- *               example: 1f603
  *
  *     EmojiUpdated:
  *       allOf:
@@ -690,7 +682,10 @@
  *   post:
  *     tags: [Studies]
  *     summary: 이모지 횟수 증가
- *     description: 특정 스터디에서 특정 이모지의 클릭 횟수를 증가시킵니다.
+ *     description: |
+ *       특정 스터디에서 특정 이모지의 클릭 횟수를 **1 증가**시킵니다.
+ *       - 요청 본문에는 **이모지 식별자 `id`만** 전달하세요.
+ *       - 증가량은 서버에서 고정 1로 처리됩니다.
  *     parameters:
  *       - $ref: '#/components/parameters/StudyIdParam'
  *     requestBody:
@@ -699,78 +694,40 @@
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - id
- *               - count
+ *             required: [id]
  *             properties:
  *               id:
- *                 type: string
- *                 description: 이모지 식별자 (유니코드 코드포인트 또는 내부 ID)
- *                 example: "1f603"
- *               emoji:
- *                 type: string
- *                 description: 실제 이모지 문자 (선택값)
- *                 example: "😃"
- *               count:
- *                 type: integer
- *                 minimum: 1
- *                 description: 증가시킬 이모지 개수
- *                 example: 1
+ *                 description: 이모지 식별자(유니코드 코드포인트 16진수 또는 실제 이모지 문자)
+ *                 oneOf:
+ *                   - type: string
+ *                     pattern: '^[0-9a-fA-F]{4,8}$'
+ *                     example: "1f603"
+ *                   - type: string
+ *                     example: "😃"
  *           examples:
  *             increment-emoji:
- *               summary: 이모지 증가 예시
+ *               summary: 이모지 1회 증가 요청
  *               value:
  *                 id: "1f603"
- *                 emoji: "😃"
- *                 count: 1
  *     responses:
  *       200:
- *         description: 이모지 증가 성공
+ *         description: 이모지 증가 성공(갱신된 StudyEmoji 레코드 반환)
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 id:
- *                   type: integer
- *                   example: 4
- *                 count:
- *                   type: integer
- *                   example: 2
- *                 createdAt:
- *                   type: string
- *                   format: date-time
- *                   example: "2025-09-11T08:45:11.150Z"
- *                 updatedAt:
- *                   type: string
- *                   format: date-time
- *                   example: "2025-09-11T08:58:12.678Z"
- *                 studyId:
- *                   type: integer
- *                   example: 5
- *                 emojiId:
- *                   type: integer
- *                   example: 3
- *                 emoji:
- *                   type: object
- *                   properties:
- *                     symbol:
- *                       type: string
- *                       example: "1f603"
+ *               $ref: '#/components/schemas/StudyEmoji'
  *             examples:
  *               success:
  *                 summary: 성공 응답 예시
  *                 value:
- *                   id: 4
- *                   count: 2
- *                   createdAt: "2025-09-11T08:45:11.150Z"
- *                   updatedAt: "2025-09-11T08:58:12.678Z"
- *                   studyId: 5
- *                   emojiId: 3
- *                   emoji:
- *                     symbol: "1f603"
+ *                   id: 51
+ *                   count: 5
+ *                   createdAt: "2025-09-12T05:48:04.147Z"
+ *                   updatedAt: "2025-09-12T05:48:06.846Z"
+ *                   studyId: 1
+ *                   emojiId: 95
  *       400:
- *         description: 잘못된 입력값 또는 이모지 ID 누락
+ *         description: 잘못된 입력값 또는 이모지 식별자 누락
  *         content:
  *           application/json:
  *             schema:
@@ -796,7 +753,7 @@
  *     tags: [Studies]
  *     summary: 이모지 횟수 감소
  *     description: |
- *       특정 스터디에서 특정 이모지의 클릭 횟수를 감소시킵니다.
+ *       특정 스터디에서 특정 이모지의 클릭 횟수를 **1 감소**시킵니다.
  *       - 감소 결과가 0 이하가 되면 해당 이모지 카운트 레코드는 **삭제**됩니다.
  *       - 이미 삭제된 상태에서 다시 감소를 요청하면 `deleted: false`와 함께 `reason: "not-exists"`가 반환됩니다.
  *     parameters:
@@ -807,28 +764,21 @@
  *         application/json:
  *           schema:
  *             type: object
- *             required: [id, count]
+ *             required: [id]
  *             properties:
  *               id:
- *                 type: string
- *                 description: 이모지 식별자 (유니코드 코드포인트 또는 내부 정수 ID를 문자열로 전달)
- *                 example: "1f603"
- *               emoji:
- *                 type: string
- *                 description: 실제 이모지 문자 (선택값, 서버 로직에는 필수 아님)
- *                 example: "😃"
- *               count:
- *                 type: integer
- *                 minimum: 1
- *                 description: 감소시킬 개수(양의 정수)
- *                 example: 1
+ *                 description: 이모지 식별자(유니코드 코드포인트 16진수 또는 실제 이모지 문자)
+ *                 oneOf:
+ *                   - type: string
+ *                     pattern: '^[0-9a-fA-F]{4,8}$'
+ *                     example: "1f603"
+ *                   - type: string
+ *                     example: "😃"
  *           examples:
  *             decrement-emoji:
- *               summary: 이모지 감소 요청 예시
+ *               summary: 이모지 1회 감소 요청
  *               value:
  *                 id: "1f603"
- *                 emoji: "😃"
- *                 count: 1
  *     responses:
  *       200:
  *         description: 감소 처리 결과
@@ -889,7 +839,7 @@
  *                   count: 0
  *                   reason: "not-exists"
  *       400:
- *         description: 잘못된 입력값 (id 누락/형식 오류, count < 1 등)
+ *         description: 잘못된 입력값 (id 누락/형식 오류)
  *         content:
  *           application/json:
  *             schema:
@@ -905,10 +855,14 @@
 import express from 'express';
 
 // 미들웨어 정의
+// eslint-disable-next-line import/extensions
 import corsMiddleware from '../../common/cors.js';
+// eslint-disable-next-line import/extensions,import/no-named-as-default,import/no-named-as-default-member
 import errorMiddleware from '../../common/error.js'; // 에러를 추가할 일이 있다면, 해당 파일에 케이스를 추가해주시기 바랍니다.
+// eslint-disable-next-line import/extensions
 import { validateCreateOrUpdateStudy } from '../checkValidation.js'; // 유효성 검사
 // 컨트롤러 정의
+// eslint-disable-next-line import/extensions
 import studyController from '../controllers/study.controllers.js';
 
 const router = express.Router();
