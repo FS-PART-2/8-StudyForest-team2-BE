@@ -907,7 +907,7 @@ import express from 'express';
 // 미들웨어 정의
 import corsMiddleware from '../../common/cors.js';
 import errorMiddleware from '../../common/error.js'; // 에러를 추가할 일이 있다면, 해당 파일에 케이스를 추가해주시기 바랍니다.
-
+import { validateCreateOrUpdateStudy } from '../checkValidation.js'; // 유효성 검사
 // 컨트롤러 정의
 import studyController from '../controllers/study.controllers.js';
 
@@ -927,12 +927,14 @@ router.get('/', errorMiddleware.asyncHandler(studyController.controlStudyList));
 // 스터디 생성 API 엔드포인트
 router.post(
   '/',
+  validateCreateOrUpdateStudy,
   errorMiddleware.asyncHandler(studyController.controlStudyCreate),
 );
 
 // 스터디 수정 API 엔드포인트
 router.patch(
   '/:studyId',
+  validateCreateOrUpdateStudy,
   errorMiddleware.asyncHandler(studyController.controlStudyUpdate),
 );
 
