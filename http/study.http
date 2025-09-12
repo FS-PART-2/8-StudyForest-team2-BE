@@ -131,9 +131,7 @@ POST {{base_local}}/studies/{{studyId}}/emojis/increment
 Content-Type: application/json
 
 {
-    "id": "1f603",
-    "emoji": "😃",
-    "count": 1
+    "id": "1f605"
 }
 
 ### 7) [배포] 이모지 횟수 증가 API
@@ -142,9 +140,7 @@ POST {{base_prod}}/studies/{{studyId}}/emojis/increment
 Content-Type: application/json
 
 {
-    "id": "1f603",
-    "emoji": "😃",
-    "count": 1
+    "id": "1f604"
 }
 
 ### 8) [로컬] 이모지 횟수 감소 API
@@ -153,7 +149,5 @@ POST {{base_local}}/studies/{{studyId}}/emojis/decrement
 Content-Type: application/json
 
 {
-    "id": "1f603",
-    "emoji": "😃",
-    "count": 1
+    "id": "1f605"
 }

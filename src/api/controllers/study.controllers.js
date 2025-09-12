@@ -250,27 +250,19 @@ async function controlEmojiIncrement(req, res) {
     throw err;
   }
 
-  const { id, _, count } = req.body;
-  const emojiSymbol = id.toString();
-  if (typeof emojiSymbol !== 'string' || emojiSymbol.length === 0) {
+  const { id } = req.body;
+  const emojiId = id.toString();
+  if (typeof emojiId !== 'string' || emojiId.length === 0) {
     const err = new Error('이모지 심볼이 누락되었습니다.');
     err.status = 400;
     err.code = 'EMOJI_SYMBOL_REQUIRED';
-    throw err;
-  }
-  const emojiCount = Number.parseInt(count, 10);
-  if (!Number.isFinite(emojiCount) || emojiCount < 0) {
-    const err = new Error('유효하지 않은 이모지 횟수입니다.');
-    err.status = 400;
-    err.code = 'INVALID_EMOJI_COUNT';
     throw err;
   }
 
   /* 서비스 호출 */
   const updatedEmojis = await studyService.serviceEmojiIncrement(
     studyId,
-    emojiSymbol,
-    emojiCount,
+    emojiId,
   );
 
   /* 결과 반환 */
@@ -288,7 +280,7 @@ async function controlEmojiDecrement(req, res) {
     throw err;
   }
 
-  const { id, _, count } = req.body;
+  const { id } = req.body;
   const emojiSymbol = id.toString();
   if (typeof emojiSymbol !== 'string' || emojiSymbol.length === 0) {
     const err = new Error('이모지 심볼이 누락되었습니다.');
@@ -297,19 +289,10 @@ async function controlEmojiDecrement(req, res) {
     throw err;
   }
 
-  const emojiCount = Number.parseInt(count, 10);
-  if (!Number.isFinite(emojiCount) || emojiCount < 1) {
-    const err = new Error('유효하지 않은 이모지 횟수입니다.');
-    err.status = 400;
-    err.code = 'INVALID_EMOJI_COUNT';
-    throw err;
-  }
-
   /* 서비스 호출 */
   const updatedEmojis = await studyService.serviceEmojiDecrement(
     studyId,
     emojiSymbol,
-    emojiCount,
   );
 
   /* 결과 반환 */

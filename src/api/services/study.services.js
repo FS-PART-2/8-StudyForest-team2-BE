@@ -421,7 +421,7 @@ async function serviceStudyDetail(studyId) {
 
 // (그대로 사용) symbol → Emoji.id 보장
 async function serviceEmojiFindOrCreate(emojiSymbol) {
-  const symbol = String(emojiSymbol);
+  let symbol = String(emojiSymbol);
 
   try {
     let emoji = await prisma.emoji.findUnique({
@@ -431,6 +431,7 @@ async function serviceEmojiFindOrCreate(emojiSymbol) {
     if (emoji) return emoji.id;
 
     try {
+      symbol = String.fromCodePoint(parseInt(symbol, 16));
       emoji = await prisma.emoji.create({
         data: { symbol, name: symbol },
         select: { id: true },
@@ -474,18 +475,17 @@ async function serviceStudyVerifyPassword(studyId, password) {
 }
 
 // 이모지 횟수 증가 API 서비스
-async function serviceEmojiIncrement(studyId, emojiSymbol, emojiCount) {
+async function serviceEmojiIncrement(studyId, emojiId) {
   const sid = Number(studyId);
-  const n = Number(emojiCount);
-  const inc = Number.isFinite(n) ? Math.max(1, Math.floor(n)) : 1;
+  const id = emojiId;
 
   // 1) symbol 기반으로 Emoji.id 확보
-  const eid = await serviceEmojiFindOrCreate(emojiSymbol);
+  const eid = await serviceEmojiFindOrCreate(id);
 
   // 2) 원자적 증가 시도: 존재하는 경우에만 업데이트(경합에 강함)
   const { count: updated } = await prisma.studyEmoji.updateMany({
     where: { studyId: sid, emojiId: eid },
-    data: { count: { increment: inc } },
+    data: { count: { increment: 1 } },
   });
 
   let updatedRecord = null;
@@ -493,16 +493,15 @@ async function serviceEmojiIncrement(studyId, emojiSymbol, emojiCount) {
     // 필요 시 갱신된 레코드 반환
     updatedRecord = await prisma.studyEmoji.findUnique({
       where: { studyId_emojiId: { studyId: sid, emojiId: eid } },
-      include: { emoji: { select: { symbol: true } } },
     });
   }
 
   // 3) 없으면 생성 시도
   if (!updatedRecord) {
     try {
-      updatedRecord = await prisma.studyEmoji.create({
+      return prisma.studyEmoji.create({
         data: {
-          count: inc,
+          count: 1,
           study: { connect: { id: sid } }, // Study가 없으면 아래 catch에서 P2003
           emoji: { connect: { id: eid } }, // 이미 보장된 Emoji
         },
@@ -510,15 +509,10 @@ async function serviceEmojiIncrement(studyId, emojiSymbol, emojiCount) {
     } catch (err) {
       if (err.code === 'P2002') {
         // 4) 생성 경합(다른 요청이 먼저 생성) → 다시 증가
-        const rec = prisma.studyEmoji.update({
+        return prisma.studyEmoji.update({
           where: { studyId_emojiId: { studyId: sid, emojiId: eid } },
-          data: { count: { increment: inc } },
+          data: { count: { increment: 1 } },
         });
-
-        return {
-          ...rec,
-          emoji: String.fromCodePoint(parseInt(emojiSymbol, 16)),
-        };
       }
       if (err.code === 'P2003') {
         // FK 위반: Study가 실제로 존재하는지 확인 필요
@@ -533,54 +527,55 @@ async function serviceEmojiIncrement(studyId, emojiSymbol, emojiCount) {
     }
   }
 
-  return {
-    ...updatedRecord,
-    emoji: String.fromCodePoint(parseInt(emojiSymbol, 16)),
-  };
+  return updatedRecord;
 }
 
 // 이모지 횟수 감소 API 서비스
-async function serviceEmojiDecrement(studyId, emojiSymbol, emojiCount) {
+async function serviceEmojiDecrement(studyId, emojiSymbol) {
   const sid = Number(studyId);
-  const n = Number(emojiCount);
-  const dec = Number.isFinite(n) ? Math.max(1, Math.floor(n)) : 1;
 
   // 1) symbol로 Emoji "조회만" (없으면 생성하지 않음)
-  const symbol = String(emojiSymbol);
+  let symbol = String(emojiSymbol);
   const emoji = await prisma.emoji.findUnique({
     where: { symbol },
     select: { id: true },
   });
 
-  // 이모지 자체가 없으면 감소할 대상이 없으므로 종료
-  if (!emoji) {
-    return {
-      deleted: false,
-      studyId: sid,
-      emojiId: null,
-      count: 0,
-      reason: 'emoji-not-found',
-    };
+  let eid = null;
+  if (emoji) {
+    eid = emoji.id;
   }
 
-  const eid = emoji.id;
+  // 이모지 자체가 없으면 감소할 대상이 없으므로 종료
+  if (!emoji) {
+    symbol = String.fromCodePoint(parseInt(symbol, 16));
+    const reEmoji = await prisma.emoji.findUnique({
+      where: { symbol },
+      select: { id: true },
+    });
+    if (!reEmoji) {
+      return {
+        deleted: false,
+        studyId: sid,
+        emojiId: null,
+        count: 0,
+        reason: 'emoji-not-found',
+      };
+    }
+    eid = reEmoji.id;
+  }
 
   // 2) 감소 후 최소 1 이상 남는 경우에만 원자적으로 감소
   const res = await prisma.studyEmoji.updateMany({
-    where: { studyId: sid, emojiId: eid, count: { gt: dec } },
-    data: { count: { decrement: dec } },
+    where: { studyId: sid, emojiId: eid, count: { gt: 1 } },
+    data: { count: { decrement: 1 } },
   });
 
   if (res.count === 1) {
     // 감소 성공 → 최신 레코드 반환
-    const delRes = await prisma.studyEmoji.findUnique({
+    return prisma.studyEmoji.findUnique({
       where: { studyId_emojiId: { studyId: sid, emojiId: eid } },
     });
-
-    return {
-      ...delRes,
-      emoji: String.fromCodePoint(parseInt(emojiSymbol, 16)),
-    };
   }
 
   // 3) 현재 레코드 조회 (없으면 이미 0)
@@ -602,7 +597,7 @@ async function serviceEmojiDecrement(studyId, emojiSymbol, emojiCount) {
 
   // 4) 기존 count <= dec 이면 0 이하가 되므로 삭제
   const del = await prisma.studyEmoji.deleteMany({
-    where: { studyId: sid, emojiId: eid, count: { lte: dec } },
+    where: { studyId: sid, emojiId: eid, count: { lte: 1 } },
   });
 
   if (del.count === 1) {
