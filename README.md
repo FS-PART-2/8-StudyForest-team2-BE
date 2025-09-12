@@ -19,14 +19,17 @@
 |  |  |  |- study.routes.js
 |  |  |  |- habit.routes.js
 |  |  |  |- focus.routes.js
+|  |  |  |- user.routes.js
 |  |  |- controllers/ # 요청 파싱(params/query/body) + 입력 검증 결과 처리
 |  |  |  |- study.controllers.js
 |  |  |  |- habit.controllers.js
 |  |  |  |- focus.controllers.js
+|  |  |  |- user.controllers.js
 |  |  |- services/ # 핵심 비즈니스 로직이 들어가는 코드
 |  |  |  |- study.services.js
 |  |  |  |- habit.services.js
 |  |  |  |- focus.services.js
+|  |  |  |- user.services.js
 |  |- /prisma # Prisma 스키마, seed/mock 데이터 파일
 |  |  |- schema.prisma
 |  |  |- migrations/
