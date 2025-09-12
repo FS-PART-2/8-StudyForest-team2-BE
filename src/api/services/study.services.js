@@ -50,9 +50,7 @@ async function serviceStudyList(options) {
       ? rawOffset
       : 0;
   const limit =
-    typeof rawLimit === 'number' &&
-    Number.isInteger(rawLimit) &&
-    rawLimit >= 0
+    typeof rawLimit === 'number' && Number.isInteger(rawLimit) && rawLimit >= 0
       ? rawLimit
       : 0;
   const sort = typeof rawSort === 'string' ? rawSort : 'recent';
@@ -409,8 +407,8 @@ async function serviceStudyDetail(studyId) {
     const totalPoint =
       // eslint-disable-next-line no-underscore-dangle
       pointsAgg && pointsAgg._sum && typeof pointsAgg._sum.point === 'number'
-        // eslint-disable-next-line no-underscore-dangle
-        ? pointsAgg._sum.point
+        ? // eslint-disable-next-line no-underscore-dangle
+          pointsAgg._sum.point
         : 0;
 
     // 응답 키는 총합 포인트 의미의 point로 노출
@@ -490,42 +488,55 @@ async function serviceEmojiIncrement(studyId, emojiSymbol, emojiCount) {
     data: { count: { increment: inc } },
   });
 
+  let updatedRecord = null;
   if (updated > 0) {
     // 필요 시 갱신된 레코드 반환
-    return prisma.studyEmoji.findUnique({
+    updatedRecord = await prisma.studyEmoji.findUnique({
       where: { studyId_emojiId: { studyId: sid, emojiId: eid } },
       include: { emoji: { select: { symbol: true } } },
     });
   }
 
   // 3) 없으면 생성 시도
-  try {
-    return await prisma.studyEmoji.create({
-      data: {
-        count: inc,
-        study: { connect: { id: sid } }, // Study가 없으면 아래 catch에서 P2003
-        emoji: { connect: { id: eid } }, // 이미 보장된 Emoji
-      },
-    });
-  } catch (err) {
-    if (err.code === 'P2002') {
-      // 4) 생성 경합(다른 요청이 먼저 생성) → 다시 증가
-      return prisma.studyEmoji.update({
-        where: { studyId_emojiId: { studyId: sid, emojiId: eid } },
-        data: { count: { increment: inc } },
+  if (!updatedRecord) {
+    try {
+      updatedRecord = await prisma.studyEmoji.create({
+        data: {
+          count: inc,
+          study: { connect: { id: sid } }, // Study가 없으면 아래 catch에서 P2003
+          emoji: { connect: { id: eid } }, // 이미 보장된 Emoji
+        },
       });
+    } catch (err) {
+      if (err.code === 'P2002') {
+        // 4) 생성 경합(다른 요청이 먼저 생성) → 다시 증가
+        const rec = prisma.studyEmoji.update({
+          where: { studyId_emojiId: { studyId: sid, emojiId: eid } },
+          data: { count: { increment: inc } },
+        });
+
+        return {
+          ...rec,
+          emoji: String.fromCodePoint(parseInt(emojiSymbol, 16)),
+        };
+      }
+      if (err.code === 'P2003') {
+        // FK 위반: Study가 실제로 존재하는지 확인 필요
+        const e = new Error(
+          `FK 위반(P2003): Study(${sid}) 또는 Emoji(${eid})가 존재하지 않습니다.`,
+        );
+        e.code = 'FK_VIOLATION';
+        throw e;
+      }
+      console.log(err, '가 발생했습니다.');
+      throw err;
     }
-    if (err.code === 'P2003') {
-      // FK 위반: Study가 실제로 존재하는지 확인 필요
-      const e = new Error(
-        `FK 위반(P2003): Study(${sid}) 또는 Emoji(${eid})가 존재하지 않습니다.`,
-      );
-      e.code = 'FK_VIOLATION';
-      throw e;
-    }
-    console.log(err, '가 발생했습니다.');
-    throw err;
   }
+
+  return {
+    ...updatedRecord,
+    emoji: String.fromCodePoint(parseInt(emojiSymbol, 16)),
+  };
 }
 
 // 이모지 횟수 감소 API 서비스
@@ -562,9 +573,14 @@ async function serviceEmojiDecrement(studyId, emojiSymbol, emojiCount) {
 
   if (res.count === 1) {
     // 감소 성공 → 최신 레코드 반환
-    return prisma.studyEmoji.findUnique({
+    const delRes = await prisma.studyEmoji.findUnique({
       where: { studyId_emojiId: { studyId: sid, emojiId: eid } },
     });
+
+    return {
+      ...delRes,
+      emoji: String.fromCodePoint(parseInt(emojiSymbol, 16)),
+    };
   }
 
   // 3) 현재 레코드 조회 (없으면 이미 0)

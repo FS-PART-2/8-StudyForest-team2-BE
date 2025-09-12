@@ -3,7 +3,7 @@
 # 공통 파라미터 설정
 @base_local = http://localhost:3000/api
 @base_prod = https://eight-studyforest-team2-be.onrender.com/api
-@studyId = 47
+@studyId = 1
 @pwd = 1234
 # 조회 API를 위한 파라미터 설정
 @limit = 100
@@ -128,6 +128,17 @@ Content-Type: application/json
 ### 7) [로컬] 이모지 횟수 증가 API
 
 POST {{base_local}}/studies/{{studyId}}/emojis/increment
+Content-Type: application/json
+
+{
+    "id": "1f603",
+    "emoji": "😃",
+    "count": 1
+}
+
+### 7) [배포] 이모지 횟수 증가 API
+
+POST {{base_prod}}/studies/{{studyId}}/emojis/increment
 Content-Type: application/json
 
 {
