@@ -1,8 +1,8 @@
 import * as s from 'superstruct';
 
 export const createStudy = s.object({
-  nick: s.size(s.string(), 1, 30),
-  name: s.size(s.string(), 1, 100),
+  nick: s.size(s.string(), 1, 10),
+  name: s.size(s.string(), 1, 20),
   content: s.size(s.string(), 0, 2000),
   img: s.string(),
   password: s.size(s.string(), 1, 64),
@@ -11,8 +11,8 @@ export const createStudy = s.object({
 });
 
 export const patchStudy = s.object({
-  nick: s.optional(s.size(s.string(), 1, 30)),
-  name: s.optional(s.size(s.string(), 1, 100)),
+  nick: s.optional(s.size(s.string(), 1, 10)),
+  name: s.optional(s.size(s.string(), 1, 20)),
   content: s.optional(s.size(s.string(), 0, 2000)),
   img: s.optional(s.string()),
   password: s.size(s.string(), 1, 64),
