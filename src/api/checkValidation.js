@@ -103,19 +103,3 @@ export const validateUpdateMe = [
       return true;
     }),
 ];
-
-export const validateCreateOrUpdateStudy = [
-  body('name')
-    .trim()
-    .isLength({ min: 1, max: 20 })
-    .withMessage('스터디 이름은 1~20자여야 합니다.')
-    .matches(/^[\p{L}\p{N}_\s]+$/u)
-    .withMessage('스터디 이름은 글자/숫자/언더바/공백만 허용됩니다.'),
-
-  body('nick')
-    .trim()
-    .isLength({ min: 1, max: 10 })
-    .withMessage('닉네임은 1~10자여야 합니다.')
-    .matches(/^[\p{L}\p{N}_\s]+$/u)
-    .withMessage('닉네임은 글자/숫자/언더바/공백만 허용됩니다.'),
-];

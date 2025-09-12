@@ -881,14 +881,12 @@ router.get('/', errorMiddleware.asyncHandler(studyController.controlStudyList));
 // 스터디 생성 API 엔드포인트
 router.post(
   '/',
-  validateCreateOrUpdateStudy,
   errorMiddleware.asyncHandler(studyController.controlStudyCreate),
 );
 
 // 스터디 수정 API 엔드포인트
 router.patch(
   '/:studyId',
-  validateCreateOrUpdateStudy,
   errorMiddleware.asyncHandler(studyController.controlStudyUpdate),
 );
 
