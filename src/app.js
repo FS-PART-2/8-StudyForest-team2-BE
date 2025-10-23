@@ -9,7 +9,7 @@ import studyRoutes from './api/routes/study.routes.js';
 import habitRoutes from './api/routes/habit.routes.js';
 import userRoutes from './api/routes/user.routes.js';
 import focusRoutes from './api/routes/focus.routes.js';
-
+import startCronJob from './utils/cronjob.js';
 import { swaggerDocs } from './common/swagger.js';
 // 환경 변수 설정
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -44,4 +44,5 @@ swaggerDocs(app);
 const PORT = Number(process.env.PORT ?? 3000);
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  startCronJob();
 });
